@@ -1,0 +1,72 @@
+{
+  "game": "race-to-finish",
+  "title": "Đua Về Đích",
+  "version": "1.0.0",
+  "background": "background.png",
+  "characters": {
+    "fox": {
+      "idle_1": "characters/fox_idle_1.png",
+      "idle_2": "characters/fox_idle_2.png",
+      "walk_1": "characters/fox_walk_1.png",
+      "walk_2": "characters/fox_walk_2.png",
+      "penalty": "characters/fox_penalty.png",
+      "victory": "characters/fox_victory.png",
+      "avatar": "characters/fox_avatar.png"
+    },
+    "penguin": {
+      "idle_1": "characters/penguin_idle_1.png",
+      "idle_2": "characters/penguin_idle_2.png",
+      "walk_1": "characters/penguin_walk_1.png",
+      "walk_2": "characters/penguin_walk_2.png",
+      "penalty": "characters/penguin_penalty.png",
+      "victory": "characters/penguin_victory.png",
+      "avatar": "characters/penguin_avatar.png"
+    },
+    "bunny": {
+      "idle_1": "characters/bunny_idle_1.png",
+      "idle_2": "characters/bunny_idle_2.png",
+      "walk_1": "characters/bunny_walk_1.png",
+      "walk_2": "characters/bunny_walk_2.png",
+      "penalty": "characters/bunny_penalty.png",
+      "victory": "characters/bunny_victory.png",
+      "avatar": "characters/bunny_avatar.png"
+    },
+    "turtle": {
+      "idle_1": "characters/turtle_idle_1.png",
+      "idle_2": "characters/turtle_idle_2.png",
+      "walk_1": "characters/turtle_walk_1.png",
+      "walk_2": "characters/turtle_walk_2.png",
+      "penalty": "characters/turtle_penalty.png",
+      "victory": "characters/turtle_victory.png",
+      "avatar": "characters/turtle_avatar.png"
+    }
+  },
+  "items": {
+    "wing": "items/wing.png",
+    "shield": "items/shield.png",
+    "cleanse": "items/cleanse.png",
+    "back_arrow": "items/back_arrow.png",
+    "hourglass": "items/hourglass.png",
+    "portal": "items/portal.png",
+    "dice_base": "items/dice_base.png",
+    "trophy": "items/trophy.png"
+  },
+  "dice": {
+    "1": "dice/dice_1.png",
+    "2": "dice/dice_2.png",
+    "3": "dice/dice_3.png",
+    "4": "dice/dice_4.png",
+    "5": "dice/dice_5.png",
+    "6": "dice/dice_6.png"
+  },
+  "tiles": {
+    "neutral": "tiles/tile_neutral.png",
+    "bonus": "tiles/tile_bonus.png",
+    "penalty": "tiles/tile_penalty.png",
+    "finish": "tiles/tile_finish.png"
+  },
+  "ui": {
+    "header_sign": "ui/header_sign.png",
+    "start_board": "ui/start_board.png"
+  }
+}

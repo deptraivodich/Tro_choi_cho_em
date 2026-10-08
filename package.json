@@ -1,22 +1,43 @@
 {
-  "name": "tro_choi_cho_em",
+  "name": "tro-choi-cho-em",
   "version": "1.0.0",
-  "main": "index.ts",
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start --port 8090",
+    "android": "expo start --android --port 8090",
+    "ios": "expo start --ios --port 8090",
+    "web": "expo start --web --port 8090",
+    "lan": "expo start --lan --port 8090",
+    "export": "expo export",
+    "test": "jest",
+    "typecheck": "tsc --noEmit"
+  },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "^2.1.2",
     "expo": "~57.0.26",
+    "expo-asset": "~57.0.18",
+    "expo-constants": "~57.0.20",
+    "expo-font": "~57.0.4",
+    "expo-linking": "~57.0.11",
+    "expo-router": "~57.0.24",
     "expo-status-bar": "~57.0.1",
     "react": "19.2.3",
-    "react-native": "0.86.3"
+    "react-dom": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-gesture-handler": "~2.32.0",
+    "react-native-reanimated": "~4.5.1",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "~4.28.0",
+    "react-native-svg": "~15.15.5",
+    "react-native-web": "~0.21.0"
   },
   "devDependencies": {
+    "@react-native/jest-preset": "^0.87.1",
+    "@types/jest": "^29.5.14",
     "@types/react": "~19.2.2",
+    "jest": "^29.7.0",
+    "jest-expo": "~57.0.5",
     "typescript": "~6.0.3"
-  },
-  "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web"
   },
   "private": true
 }

@@ -1,0 +1,1 @@
+export { VaultCodeScreen } from './VaultCodeScreen';

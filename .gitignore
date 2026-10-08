@@ -39,3 +39,10 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# dev & test artifacts
+/*.png
+.chrome-*
+dom_dump.html
+coverage/
+
