@@ -46,3 +46,9 @@ yarn-error.*
 dom_dump.html
 coverage/
 
+
+# Captured debug output and build tooling
+/docs/debug/
+/artifacts/
+.eslintcache
+/docs/screenshots/legacy/

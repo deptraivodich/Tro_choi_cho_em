@@ -10,7 +10,10 @@
     "lan": "expo start --lan --port 8090",
     "export": "expo export",
     "test": "jest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "expo lint",
+    "test:race": "jest --runInBand src/games/race-to-finish/tests",
+    "test:ui": "node scripts/race-e2e.mjs"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.1.2",
@@ -32,9 +35,12 @@
     "react-native-web": "~0.21.0"
   },
   "devDependencies": {
-    "@react-native/jest-preset": "^0.87.1",
+    "@react-native/jest-preset": "0.86.3",
     "@types/jest": "^29.5.14",
     "@types/react": "~19.2.2",
+    "@types/react-dom": "~19.2.3",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "~57.0.2",
     "jest": "^29.7.0",
     "jest-expo": "~57.0.5",
     "typescript": "~6.0.3"

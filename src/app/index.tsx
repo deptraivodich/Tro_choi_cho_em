@@ -1,7 +1,7 @@
 import React from 'react';
 import { useRouter } from 'expo-router';
-import { TrainingGamesHome } from '../features/training-games/TrainingGamesHome';
-import { GameId } from '../features/training-games/types';
+import { TrainingGamesHome } from '../screens/TrainingGamesHome';
+import { GameId } from '../shared/types/index';
 
 export default function HomeScreen() {
   const router = useRouter();

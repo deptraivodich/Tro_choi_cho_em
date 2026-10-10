@@ -9,10 +9,12 @@
         "./src/*"
       ]
     },
-    "types": ["jest"]
+    "types": [
+      "jest"
+    ]
   },
   "include": [
-    "**/*.ts",
-    "**/*.tsx"
+    "src/**/*.ts",
+    "src/**/*.tsx"
   ]
 }

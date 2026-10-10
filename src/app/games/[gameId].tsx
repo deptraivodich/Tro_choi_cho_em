@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, BackHandler } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { GAME_REGISTRY } from '../../features/training-games/registry';
-import { GameId } from '../../features/training-games/types';
-import { colors } from '../../features/training-games/theme/colors';
+import { GAME_REGISTRY } from '../../games/registry';
+import { GameId } from '../../shared/types/index';
+import { colors } from '../../shared/theme/colors';
 
 export default function GameScreen() {
   const { gameId } = useLocalSearchParams<{ gameId: string }>();
@@ -41,7 +41,7 @@ export default function GameScreen() {
         <Text style={styles.errorIcon}>⚠️</Text>
         <Text style={styles.errorTitle}>Không tìm thấy trò chơi</Text>
         <Text style={styles.errorDesc}>
-          Trò chơi "{gameId}" không tồn tại trong danh mục hệ thống.
+          Trò chơi &quot;{gameId}&quot; không tồn tại trong danh mục hệ thống.
         </Text>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.replace('/')}>
           <Text style={styles.backBtnText}>Quay về sảnh trò chơi</Text>

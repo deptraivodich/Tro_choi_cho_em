@@ -1,0 +1,303 @@
+# File thay đổi / di chuyển
+
+Snapshot trước task giữ ở thư mục temp được ghi trong race-audit.md. Danh sách dưới đây là working tree cuối task; gồm cả các thay đổi người dùng đã có trước task (được giữ và chuyển cùng module). Chưa stage/commit nên Git hiển thị D + ?? cho file move; đây là di chuyển, không mất source/asset.
+
+Các implementation mới trọng tâm: raceReducer.ts, RaceController.ts, useRaceGame.ts, questions.ts, exactAnswer.ts, tokenPlacement.ts, reelPlan.ts, AnimatedToken.tsx, MathQuestionModal.tsx, MysteryRollModal.tsx và các test.
+
+Các game còn lại đổi đường import và tổ chức screen; GameArt chỉ của Energy Defense chuyển về module đó. Shared GameHeader thêm co tiêu đề trên màn hình nhỏ, GameCard thêm accessibility/testID, useGameTimer đồng bộ pause ref trong effect (contract giữ nguyên). JSX quote được escape ở route error và hai hướng dẫn game để lint. Package thêm lint/test tooling và chỉnh Jest preset khớp React Native 0.86.3. Các script debug và screenshot cũ vẫn giữ trên máy ở docs/debug và docs/screenshots/legacy (ignore).
+
+```text
+ M .gitignore
+ D App.tsx
+ D GAME_DESIGN.md
+ D INTEGRATION_GUIDE.md
+ M README.md
+ D TEST_REPORT.md
+ D assets/games/race-to-finish/background.png
+ D assets/games/race-to-finish/characters/bunny_avatar.png
+ D assets/games/race-to-finish/characters/bunny_idle_1.png
+ D assets/games/race-to-finish/characters/bunny_idle_2.png
+ D assets/games/race-to-finish/characters/bunny_penalty.png
+ D assets/games/race-to-finish/characters/bunny_victory.png
+ D assets/games/race-to-finish/characters/bunny_walk_1.png
+ D assets/games/race-to-finish/characters/bunny_walk_2.png
+ D assets/games/race-to-finish/characters/fox_avatar.png
+ D assets/games/race-to-finish/characters/fox_idle_1.png
+ D assets/games/race-to-finish/characters/fox_idle_2.png
+ D assets/games/race-to-finish/characters/fox_penalty.png
+ D assets/games/race-to-finish/characters/fox_victory.png
+ D assets/games/race-to-finish/characters/fox_walk_1.png
+ D assets/games/race-to-finish/characters/fox_walk_2.png
+ D assets/games/race-to-finish/characters/penguin_avatar.png
+ D assets/games/race-to-finish/characters/penguin_idle_1.png
+ D assets/games/race-to-finish/characters/penguin_idle_2.png
+ D assets/games/race-to-finish/characters/penguin_penalty.png
+ D assets/games/race-to-finish/characters/penguin_victory.png
+ D assets/games/race-to-finish/characters/penguin_walk_1.png
+ D assets/games/race-to-finish/characters/penguin_walk_2.png
+ D assets/games/race-to-finish/characters/turtle_avatar.png
+ D assets/games/race-to-finish/characters/turtle_idle_1.png
+ D assets/games/race-to-finish/characters/turtle_idle_2.png
+ D assets/games/race-to-finish/characters/turtle_penalty.png
+ D assets/games/race-to-finish/characters/turtle_victory.png
+ D assets/games/race-to-finish/characters/turtle_walk_1.png
+ D assets/games/race-to-finish/characters/turtle_walk_2.png
+ D assets/games/race-to-finish/dice/dice_1.png
+ D assets/games/race-to-finish/dice/dice_2.png
+ D assets/games/race-to-finish/dice/dice_3.png
+ D assets/games/race-to-finish/dice/dice_4.png
+ D assets/games/race-to-finish/dice/dice_5.png
+ D assets/games/race-to-finish/dice/dice_6.png
+ D assets/games/race-to-finish/items/back_arrow.png
+ D assets/games/race-to-finish/items/cleanse.png
+ D assets/games/race-to-finish/items/dice_base.png
+ D assets/games/race-to-finish/items/hourglass.png
+ D assets/games/race-to-finish/items/mockup_dice_sample.png
+ D assets/games/race-to-finish/items/portal.png
+ D assets/games/race-to-finish/items/shield.png
+ D assets/games/race-to-finish/items/trophy.png
+ D assets/games/race-to-finish/items/wing.png
+ D assets/games/race-to-finish/manifest.json
+ D assets/games/race-to-finish/raw/background.png
+ D assets/games/race-to-finish/raw/background_mockup.png
+ D assets/games/race-to-finish/raw/item.png
+ D assets/games/race-to-finish/raw/model_nv.png
+ D assets/games/race-to-finish/raw/sample_tile8.png
+ D assets/games/race-to-finish/tiles/tile_bonus.png
+ D assets/games/race-to-finish/tiles/tile_finish.png
+ D assets/games/race-to-finish/tiles/tile_neutral.png
+ D assets/games/race-to-finish/tiles/tile_penalty.png
+ D assets/games/race-to-finish/ui/header_sign.png
+ D assets/games/race-to-finish/ui/header_sign_raw.png
+ D assets/games/race-to-finish/ui/start_board.png
+ D assets/games/race-to-finish/ui/start_board_raw.png
+ D index.ts
+ M jest.config.js
+ M package-lock.json
+ M package.json
+ M src/app/_layout.tsx
+ M src/app/games/[gameId].tsx
+ M src/app/index.tsx
+ D src/features/training-games/TrainingGamesHome.tsx
+ D src/features/training-games/__tests__/generator_sampling.test.ts
+ D src/features/training-games/__tests__/math_core.test.ts
+ D src/features/training-games/__tests__/race_to_finish.test.ts
+ D src/features/training-games/__tests__/storage_and_games.test.ts
+ D src/features/training-games/components/FractionView.tsx
+ D src/features/training-games/components/GameArt.tsx
+ D src/features/training-games/components/GameCard.tsx
+ D src/features/training-games/components/GameHeader.tsx
+ D src/features/training-games/components/GameIcons.tsx
+ D src/features/training-games/components/GameModal.tsx
+ D src/features/training-games/components/TimerBar.tsx
+ D src/features/training-games/core/audioController.ts
+ D src/features/training-games/core/game-loop/useGameTimer.ts
+ D src/features/training-games/core/math/angle.ts
+ D src/features/training-games/core/math/decimal.ts
+ D src/features/training-games/core/math/fraction.ts
+ D src/features/training-games/core/math/generators.ts
+ D src/features/training-games/core/math/geometry.ts
+ D src/features/training-games/core/math/prng.ts
+ D src/features/training-games/core/math/units.ts
+ D src/features/training-games/games/block-island/BlockIslandScreen.tsx
+ D src/features/training-games/games/block-island/index.ts
+ D src/features/training-games/games/energy-defense/EnergyDefenseScreen.tsx
+ D src/features/training-games/games/energy-defense/index.ts
+ D src/features/training-games/games/floating-market/FloatingMarketScreen.tsx
+ D src/features/training-games/games/floating-market/index.ts
+ D src/features/training-games/games/planet-rescue/PlanetRescueScreen.tsx
+ D src/features/training-games/games/planet-rescue/index.ts
+ D src/features/training-games/games/race-to-finish/RaceToFinishScreen.tsx
+ D src/features/training-games/games/race-to-finish/assets.ts
+ D src/features/training-games/games/race-to-finish/boardConfig.ts
+ D src/features/training-games/games/race-to-finish/components/CleanseChoiceModal.tsx
+ D src/features/training-games/games/race-to-finish/components/GameBoardView.tsx
+ D src/features/training-games/games/race-to-finish/components/PlayerBanner.tsx
+ D src/features/training-games/games/race-to-finish/components/SetupModal.tsx
+ D src/features/training-games/games/race-to-finish/components/TurnDashboard.tsx
+ D src/features/training-games/games/race-to-finish/components/TurnHandoverModal.tsx
+ D src/features/training-games/games/race-to-finish/components/VictoryModal.tsx
+ D src/features/training-games/games/race-to-finish/gameEngine.ts
+ D src/features/training-games/games/race-to-finish/index.ts
+ D src/features/training-games/games/race-to-finish/types.ts
+ D src/features/training-games/games/race-to-finish/useRaceGame.ts
+ D src/features/training-games/games/rhythm-bakery/RhythmBakeryScreen.tsx
+ D src/features/training-games/games/rhythm-bakery/index.ts
+ D src/features/training-games/games/royal-artillery/RoyalArtilleryScreen.tsx
+ D src/features/training-games/games/royal-artillery/index.ts
+ D src/features/training-games/games/space-pets/SpacePetsScreen.tsx
+ D src/features/training-games/games/space-pets/index.ts
+ D src/features/training-games/games/terrain-racing/TerrainRacingScreen.tsx
+ D src/features/training-games/games/terrain-racing/index.ts
+ D src/features/training-games/games/treasure-dive/TreasureDiveScreen.tsx
+ D src/features/training-games/games/treasure-dive/index.ts
+ D src/features/training-games/games/vault-code/VaultCodeScreen.tsx
+ D src/features/training-games/games/vault-code/index.ts
+ D src/features/training-games/registry.ts
+ D src/features/training-games/storage/localStorageAdapter.ts
+ D src/features/training-games/storage/profileManager.ts
+ D src/features/training-games/storage/storageAdapter.ts
+ D src/features/training-games/theme/colors.ts
+ D src/features/training-games/theme/gamePalettes.ts
+ D src/features/training-games/types.ts
+ M tsconfig.json
+?? docs/ARCHITECTURE.md
+?? docs/GAME_DESIGN.md
+?? docs/INTEGRATION_GUIDE.md
+?? docs/TEST_REPORT.md
+?? docs/archive/expo-template/App.tsx
+?? docs/archive/expo-template/index.ts
+?? docs/changed-files.md
+?? docs/race-audit.md
+?? docs/race-verification.md
+?? docs/screenshots/race-reduced-result.png
+?? docs/screenshots/race-small-board.png
+?? docs/screenshots/race-small-question.png
+?? docs/screenshots/race-spinning.png
+?? docs/screenshots/race-victory.png
+?? eslint.config.js
+?? scripts/lib/cdp.mjs
+?? scripts/navigation-e2e.mjs
+?? scripts/race-e2e.mjs
+?? scripts/serve-web.mjs
+?? src/games/block-island/index.ts
+?? src/games/block-island/screens/BlockIslandScreen.tsx
+?? src/games/energy-defense/components/GameArt.tsx
+?? src/games/energy-defense/index.ts
+?? src/games/energy-defense/screens/EnergyDefenseScreen.tsx
+?? src/games/floating-market/index.ts
+?? src/games/floating-market/screens/FloatingMarketScreen.tsx
+?? src/games/index.ts
+?? src/games/planet-rescue/index.ts
+?? src/games/planet-rescue/screens/PlanetRescueScreen.tsx
+?? src/games/race-to-finish/assets/background.png
+?? src/games/race-to-finish/assets/characters/bunny_avatar.png
+?? src/games/race-to-finish/assets/characters/bunny_idle_1.png
+?? src/games/race-to-finish/assets/characters/bunny_idle_2.png
+?? src/games/race-to-finish/assets/characters/bunny_penalty.png
+?? src/games/race-to-finish/assets/characters/bunny_victory.png
+?? src/games/race-to-finish/assets/characters/bunny_walk_1.png
+?? src/games/race-to-finish/assets/characters/bunny_walk_2.png
+?? src/games/race-to-finish/assets/characters/fox_avatar.png
+?? src/games/race-to-finish/assets/characters/fox_idle_1.png
+?? src/games/race-to-finish/assets/characters/fox_idle_2.png
+?? src/games/race-to-finish/assets/characters/fox_penalty.png
+?? src/games/race-to-finish/assets/characters/fox_victory.png
+?? src/games/race-to-finish/assets/characters/fox_walk_1.png
+?? src/games/race-to-finish/assets/characters/fox_walk_2.png
+?? src/games/race-to-finish/assets/characters/penguin_avatar.png
+?? src/games/race-to-finish/assets/characters/penguin_idle_1.png
+?? src/games/race-to-finish/assets/characters/penguin_idle_2.png
+?? src/games/race-to-finish/assets/characters/penguin_penalty.png
+?? src/games/race-to-finish/assets/characters/penguin_victory.png
+?? src/games/race-to-finish/assets/characters/penguin_walk_1.png
+?? src/games/race-to-finish/assets/characters/penguin_walk_2.png
+?? src/games/race-to-finish/assets/characters/turtle_avatar.png
+?? src/games/race-to-finish/assets/characters/turtle_idle_1.png
+?? src/games/race-to-finish/assets/characters/turtle_idle_2.png
+?? src/games/race-to-finish/assets/characters/turtle_penalty.png
+?? src/games/race-to-finish/assets/characters/turtle_victory.png
+?? src/games/race-to-finish/assets/characters/turtle_walk_1.png
+?? src/games/race-to-finish/assets/characters/turtle_walk_2.png
+?? src/games/race-to-finish/assets/dice/dice_1.png
+?? src/games/race-to-finish/assets/dice/dice_2.png
+?? src/games/race-to-finish/assets/dice/dice_3.png
+?? src/games/race-to-finish/assets/dice/dice_4.png
+?? src/games/race-to-finish/assets/dice/dice_5.png
+?? src/games/race-to-finish/assets/dice/dice_6.png
+?? src/games/race-to-finish/assets/index.ts
+?? src/games/race-to-finish/assets/items/back_arrow.png
+?? src/games/race-to-finish/assets/items/cleanse.png
+?? src/games/race-to-finish/assets/items/dice_base.png
+?? src/games/race-to-finish/assets/items/hourglass.png
+?? src/games/race-to-finish/assets/items/mockup_dice_sample.png
+?? src/games/race-to-finish/assets/items/portal.png
+?? src/games/race-to-finish/assets/items/shield.png
+?? src/games/race-to-finish/assets/items/trophy.png
+?? src/games/race-to-finish/assets/items/wing.png
+?? src/games/race-to-finish/assets/manifest.json
+?? src/games/race-to-finish/assets/map_landscape.png
+?? src/games/race-to-finish/assets/raw/background.png
+?? src/games/race-to-finish/assets/raw/background_mockup.png
+?? src/games/race-to-finish/assets/raw/item.png
+?? src/games/race-to-finish/assets/raw/model_nv.png
+?? src/games/race-to-finish/assets/raw/sample_tile8.png
+?? src/games/race-to-finish/assets/tiles/tile_bonus.png
+?? src/games/race-to-finish/assets/tiles/tile_finish.png
+?? src/games/race-to-finish/assets/tiles/tile_neutral.png
+?? src/games/race-to-finish/assets/tiles/tile_penalty.png
+?? src/games/race-to-finish/assets/ui/header_sign.png
+?? src/games/race-to-finish/assets/ui/header_sign_raw.png
+?? src/games/race-to-finish/assets/ui/modal_bonus_frame.png
+?? src/games/race-to-finish/assets/ui/modal_penalty_frame.png
+?? src/games/race-to-finish/assets/ui/start_board.png
+?? src/games/race-to-finish/assets/ui/start_board_raw.png
+?? src/games/race-to-finish/components/AnimatedToken.tsx
+?? src/games/race-to-finish/components/CleanseChoiceModal.tsx
+?? src/games/race-to-finish/components/ForkChoiceModal.tsx
+?? src/games/race-to-finish/components/GameBoardView.tsx
+?? src/games/race-to-finish/components/MathQuestionModal.tsx
+?? src/games/race-to-finish/components/MysteryRollModal.tsx
+?? src/games/race-to-finish/components/PlayerBanner.tsx
+?? src/games/race-to-finish/components/SetupModal.tsx
+?? src/games/race-to-finish/components/TurnDashboard.tsx
+?? src/games/race-to-finish/components/TurnHandoverModal.tsx
+?? src/games/race-to-finish/components/VictoryModal.tsx
+?? src/games/race-to-finish/data/boardConfig.ts
+?? src/games/race-to-finish/hooks/useRaceGame.ts
+?? src/games/race-to-finish/hooks/useReducedMotion.ts
+?? src/games/race-to-finish/index.ts
+?? src/games/race-to-finish/logic/exactAnswer.ts
+?? src/games/race-to-finish/logic/gameEngine.ts
+?? src/games/race-to-finish/logic/questions.ts
+?? src/games/race-to-finish/logic/reelPlan.ts
+?? src/games/race-to-finish/logic/tokenPlacement.ts
+?? src/games/race-to-finish/screens/RaceToFinishScreen.tsx
+?? src/games/race-to-finish/state/RaceController.ts
+?? src/games/race-to-finish/state/raceReducer.ts
+?? src/games/race-to-finish/tests/animation.test.tsx
+?? src/games/race-to-finish/tests/controller.test.ts
+?? src/games/race-to-finish/tests/questions.test.ts
+?? src/games/race-to-finish/tests/raceFlow.test.ts
+?? src/games/race-to-finish/tests/race_to_finish.test.ts
+?? src/games/race-to-finish/types/index.ts
+?? src/games/registry.ts
+?? src/games/rhythm-bakery/index.ts
+?? src/games/rhythm-bakery/screens/RhythmBakeryScreen.tsx
+?? src/games/royal-artillery/index.ts
+?? src/games/royal-artillery/screens/RoyalArtilleryScreen.tsx
+?? src/games/space-pets/index.ts
+?? src/games/space-pets/screens/SpacePetsScreen.tsx
+?? src/games/terrain-racing/index.ts
+?? src/games/terrain-racing/screens/TerrainRacingScreen.tsx
+?? src/games/treasure-dive/index.ts
+?? src/games/treasure-dive/screens/TreasureDiveScreen.tsx
+?? src/games/vault-code/index.ts
+?? src/games/vault-code/screens/VaultCodeScreen.tsx
+?? src/screens/TrainingGamesHome.tsx
+?? src/shared/audio/audioController.ts
+?? src/shared/components/FractionView.tsx
+?? src/shared/components/GameCard.tsx
+?? src/shared/components/GameHeader.tsx
+?? src/shared/components/GameIcons.tsx
+?? src/shared/components/GameModal.tsx
+?? src/shared/components/TimerBar.tsx
+?? src/shared/hooks/useGameTimer.ts
+?? src/shared/math/angle.ts
+?? src/shared/math/decimal.ts
+?? src/shared/math/fraction.ts
+?? src/shared/math/generators.ts
+?? src/shared/math/geometry.ts
+?? src/shared/math/prng.ts
+?? src/shared/math/units.ts
+?? src/shared/storage/localStorageAdapter.ts
+?? src/shared/storage/profileManager.ts
+?? src/shared/storage/storageAdapter.ts
+?? src/shared/tests/architecture.test.ts
+?? src/shared/tests/generator_sampling.test.ts
+?? src/shared/tests/math_core.test.ts
+?? src/shared/tests/storage_and_games.test.ts
+?? src/shared/theme/colors.ts
+?? src/shared/theme/gamePalettes.ts
+?? src/shared/types/index.ts
+```

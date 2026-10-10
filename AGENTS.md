@@ -39,3 +39,13 @@ Docs: https://docs.expo.dev/eas/index.md
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+
+## Game modules and parallel work
+
+- Each game owns its source, components, logic, state, assets and tests under `src/games/<game-id>/`. Export its public screen from `index.ts`; keep the `{ onExit: () => void }` contract.
+- Do not import another game's implementation or import the central game registry from a game module. Shared code under `src/shared/` must not import game modules; keep the dependency direction from games to shared.
+- Keep one Expo Router in `src/app/`. Screens in game modules are implementations, not additional routers. See `docs/ARCHITECTURE.md` for registration and integration.
+- Assign a separate branch/worktree and a separate game directory to each developer or agent. Create worktrees from the approved integration commit; uncommitted changes in another worktree are not inherited.
+- Keep dependency installations and generated artifacts local to each worktree. Use distinct Metro/web ports when running both worktrees. Coordinate changes to `src/games/registry.ts`, `src/shared/types/index.ts`, shared APIs and package/config files during integration.
+- Preserve existing working changes. Do not reset, overwrite unrelated work, commit or push unless the user authorizes it. Avoid broad `git add .`; review an explicit file list, including both old and new paths for moves.
+- Validate the affected game, architecture/import checks, typecheck and lint before handing changes back. Report remaining warnings and distinguish bundle checks from runtime checks on actual devices.

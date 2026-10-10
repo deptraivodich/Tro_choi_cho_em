@@ -1,0 +1,186 @@
+import { Player, GamePhase, GameMode, MysteryRollState, ForkChoiceState, BonusEffectType, PenaltyEffectType } from '../types/index';
+import { START_TILE_ID, FINISH_TILE_ID, getTile, getTileOrder, isTileInFirstTen } from '../data/boardConfig';
+import { getNextTileId, isForkTile } from '../logic/gameEngine';
+import { RaceQuestion, gradeAnswer } from '../logic/questions';
+
+export interface Movement {
+  remaining: number;
+  kind: 'forward' | 'backward' | 'reset';
+  resolveTile: boolean;
+}
+export interface RaceState {
+  actionId: number;
+  turnId: number;
+  sessionId: number;
+  startedAt: number;
+  gameMode: GameMode;
+  players: Player[];
+  activePlayerIndex: number;
+  gamePhase: GamePhase;
+  isPaused: boolean;
+  currentDiceValue: number;
+  question: RaceQuestion | null;
+  submittedAnswer: string | null;
+  answerCorrect: boolean | null;
+  correctCount: number;
+  incorrectCount: number;
+  motion: Movement | null;
+  mysteryRollState: MysteryRollState | null;
+  forkChoiceState: ForkChoiceState | null;
+  winner: Player | null;
+  logMessage: string;
+}
+export const initialRaceState: RaceState = {
+  actionId: 0, turnId: 0, sessionId: 0, startedAt: 0, gameMode: 'single', players: [], activePlayerIndex: 0,
+  gamePhase: 'setup', isPaused: false, currentDiceValue: 3, question: null, submittedAnswer: null,
+  answerCorrect: null, correctCount: 0, incorrectCount: 0, motion: null, mysteryRollState: null,
+  forkChoiceState: null, winner: null, logMessage: 'Tung xúc xắc, giải toán rồi tiến về đích!',
+};
+export type RaceEvent =
+  | { type: 'START'; mode: GameMode; players: Player[]; startedAt?: number }
+  | { type: 'PAUSE'; paused: boolean }
+  | { type: 'ROLL'; id: number; value: number }
+  | { type: 'DICE_DONE'; id: number; question: RaceQuestion }
+  | { type: 'ANSWER'; id: number; answer: string }
+  | { type: 'ANSWER_FEEDBACK_DONE'; id: number }
+  | { type: 'MOTION_DONE'; id: number }
+  | { type: 'BRANCH'; id: number; choice: 'main' | 'shortcut' }
+  | { type: 'LAND'; id: number; result?: BonusEffectType | PenaltyEffectType }
+  | { type: 'SPIN_DONE'; id: number }
+  | { type: 'APPLY'; id: number; cleanse?: boolean }
+  | { type: 'NEXT'; id: number }
+  | { type: 'HANDOVER'; id: number };
+
+function patchPlayer(s: RaceState, patch: Partial<Player>): RaceState {
+  return { ...s, players: s.players.map((p, i) => i === s.activePlayerIndex ? { ...p, ...patch } : p) };
+}
+function endTurn(s: RaceState, message = s.logMessage): RaceState {
+  return { ...patchPlayer(s, { currentPose: 'idle_1' }), gamePhase: 'turn_end', motion: null,
+    mysteryRollState: null, forkChoiceState: null, logMessage: message };
+}
+// The logical position changes only here. Visual interpolation never writes a tile position.
+function nextStep(s: RaceState, motion: Movement, branch?: 'main' | 'shortcut'): RaceState {
+  const player = s.players[s.activePlayerIndex];
+  if (motion.kind === 'forward' && isForkTile(player.currentTileId) && !branch) {
+    const tile = getTile(player.currentTileId);
+    return { ...s, gamePhase: 'awaiting_fork_choice', motion, forkChoiceState: {
+      forkTileId: tile.id, playerIndex: s.activePlayerIndex, remainingSteps: motion.remaining,
+      mainNextId: tile.nextTileIds.main!, shortcutNextId: tile.nextTileIds.shortcut!,
+    }, logMessage: `${player.name} tới ngã rẽ! Hãy chọn đường đi.` };
+  }
+  let tileId: string, history: string[];
+  if (motion.kind === 'reset') { tileId = START_TILE_ID; history = [START_TILE_ID]; }
+  else if (motion.kind === 'backward') {
+    history = player.pathHistory.length > 1 ? player.pathHistory.slice(0, -1) : [START_TILE_ID];
+    tileId = history[history.length - 1];
+  } else {
+    tileId = getNextTileId(player.currentTileId, branch);
+    history = [...player.pathHistory, tileId];
+  }
+  return { ...patchPlayer(s, { currentTileId: tileId, position: getTileOrder(tileId), pathHistory: history,
+    currentPose: motion.kind === 'forward' ? (motion.remaining % 2 ? 'walk_1' : 'walk_2') : 'penalty' }),
+    gamePhase: motion.resolveTile ? 'moving' : 'applying_effect', forkChoiceState: null,
+    motion: { ...motion, remaining: motion.remaining - 1 } };
+}
+
+function transition(s: RaceState, event: Exclude<RaceEvent, { type: 'START' } | { type: 'PAUSE' }>): RaceState {
+  const player = s.players[s.activePlayerIndex];
+  if (!player) return s;
+  switch (event.type) {
+    case 'ROLL':
+      if (s.gamePhase !== 'ready_to_roll' || !Number.isInteger(event.value) || event.value < 1 || event.value > 6) return s;
+      return { ...s, gamePhase: 'rolling', currentDiceValue: event.value, question: null,
+        answerCorrect: null, submittedAnswer: null, logMessage: `${player.name} đang tung xúc xắc...` };
+    case 'DICE_DONE':
+      if (s.gamePhase !== 'rolling') return s;
+      return { ...s, gamePhase: 'showing_question', question: event.question,
+        logMessage: `Xúc xắc: ${s.currentDiceValue}. Trả lời đúng để đi ${s.currentDiceValue} ô!` };
+    case 'ANSWER': {
+      if (s.gamePhase !== 'showing_question' || !s.question) return s;
+      const correct = gradeAnswer(s.question, event.answer);
+      return { ...s, gamePhase: 'evaluating_answer', submittedAnswer: event.answer, answerCorrect: correct,
+        correctCount: s.correctCount + Number(correct), incorrectCount: s.incorrectCount + Number(!correct),
+        logMessage: correct ? `${player.name} trả lời đúng!` : `${player.name} trả lời chưa đúng, đứng nguyên vị trí.` };
+    }
+    case 'ANSWER_FEEDBACK_DONE':
+      if (s.gamePhase !== 'evaluating_answer') return s;
+      return s.answerCorrect ? nextStep({ ...s, question: null }, { remaining: s.currentDiceValue, kind: 'forward', resolveTile: true })
+        : endTurn({ ...s, question: null });
+    case 'BRANCH':
+      if (s.gamePhase !== 'awaiting_fork_choice' || !s.motion) return s;
+      return nextStep(s, s.motion, event.choice);
+    case 'MOTION_DONE': {
+      if (!['moving', 'applying_effect'].includes(s.gamePhase) || !s.motion) return s;
+      if (player.currentTileId === FINISH_TILE_ID) {
+        const final = patchPlayer(s, { rank: 1, currentPose: 'victory' });
+        return { ...final, gamePhase: 'finished', motion: null, winner: final.players[s.activePlayerIndex],
+          logMessage: `${player.name} đã cán đích!` };
+      }
+      if (s.motion.remaining > 0) return nextStep(s, s.motion);
+      const landed = patchPlayer(s, { currentPose: 'idle_1' });
+      return s.motion.resolveTile ? { ...landed, gamePhase: 'evaluating_tile', motion: null } : endTurn(landed);
+    }
+    case 'LAND': {
+      if (s.gamePhase !== 'evaluating_tile') return s;
+      const tile = getTile(player.currentTileId);
+      if (tile.type !== 'bonus' && tile.type !== 'penalty') return endTurn(s, `${player.name} dừng chân an toàn.`);
+      const validResults = tile.type === 'bonus' ? ['advance_1', 'advance_2', 'shield', 'cleanse']
+        : isTileInFirstTen(tile.id) ? ['retreat_1', 'retreat_2', 'skip_turn', 'reset_start'] : ['retreat_1', 'retreat_2', 'skip_turn'];
+      if (!event.result || !validResults.includes(event.result)) return s;
+      return { ...s, gamePhase: 'rolling_mystery', mysteryRollState: {
+        id: s.actionId + 1, type: tile.type, tileId: tile.id, playerIndex: s.activePlayerIndex,
+        result: event.result, hasShieldProtection: tile.type === 'penalty' && player.hasShield,
+        canUseCleanse: tile.type === 'penalty' && !player.hasShield && player.cleanseCount > 0,
+      }, logMessage: tile.type === 'bonus' ? 'Đang quay phần thưởng...' : 'Đang quay hình phạt...' };
+    }
+    case 'SPIN_DONE':
+      return s.gamePhase === 'rolling_mystery' ? { ...s, gamePhase: 'mystery_result' } : s;
+    case 'APPLY': {
+      if (s.gamePhase !== 'mystery_result' || !s.mysteryRollState) return s;
+      const mystery = s.mysteryRollState;
+      if (event.cleanse) {
+        if (!mystery.canUseCleanse || player.cleanseCount < 1) return s;
+        return endTurn(patchPlayer(s, { cleanseCount: player.cleanseCount - 1 }), 'Ngôi sao đã hóa giải hình phạt!');
+      }
+      const clean = { ...s, mysteryRollState: null };
+      if (mystery.type === 'penalty' && player.hasShield) return endTurn(patchPlayer(clean, { hasShield: false }), 'Khiên đã chặn hình phạt!');
+      switch (mystery.result) {
+        case 'shield': return endTurn(patchPlayer(clean, { hasShield: true }), 'Nhận Khiên Thần!');
+        case 'cleanse': return endTurn(patchPlayer(clean, { cleanseCount: 1 }), 'Giữ ngôi sao để hóa giải bất lợi!');
+        case 'skip_turn': return endTurn(patchPlayer(clean, { skipNextTurn: true }), 'Mất lượt kế tiếp.');
+        case 'reset_start':
+          if (!isTileInFirstTen(mystery.tileId)) return s;
+          return nextStep(clean, { kind: 'reset', remaining: 1, resolveTile: false });
+        case 'retreat_1': case 'retreat_2':
+          return nextStep(clean, { kind: 'backward', remaining: mystery.result === 'retreat_1' ? 1 : 2, resolveTile: false });
+        case 'advance_1': case 'advance_2':
+          return nextStep(clean, { kind: 'forward', remaining: mystery.result === 'advance_1' ? 1 : 2, resolveTile: false });
+      }
+    }
+    case 'NEXT': {
+      if (s.gamePhase !== 'turn_end') return s;
+      const nextIndex = (s.activePlayerIndex + 1) % s.players.length;
+      const next = s.players[nextIndex];
+      const base = { ...s, activePlayerIndex: nextIndex, turnId: s.turnId + 1, question: null,
+        submittedAnswer: null, answerCorrect: null, mysteryRollState: null, forkChoiceState: null };
+      if (next.skipNextTurn) return endTurn(patchPlayer(base, { skipNextTurn: false }), `${next.name} nghỉ lượt này do hình phạt.`);
+      return { ...base, gamePhase: s.gameMode === 'local_multiplayer' && !next.isBot ? 'turn_handover' : 'ready_to_roll',
+        logMessage: `Đến lượt ${next.name}.` };
+    }
+    case 'HANDOVER': return s.gamePhase === 'turn_handover' ? { ...s, gamePhase: 'ready_to_roll' } : s;
+  }
+}
+
+export function raceReducer(state: RaceState, event: RaceEvent): RaceState {
+  if (event.type === 'START') {
+    if (event.players.length < 2 || new Set(event.players.map(p => p.id)).size !== event.players.length) return state;
+    return { ...initialRaceState, actionId: state.actionId + 1, sessionId: state.sessionId + 1, turnId: 1,
+      startedAt: event.startedAt ?? 0, gameMode: event.mode, gamePhase: 'ready_to_roll', players: event.players.map(player => ({ ...player,
+        currentTileId: START_TILE_ID, pathHistory: [START_TILE_ID], position: 0, hasShield: false,
+        cleanseCount: 0, skipNextTurn: false, currentPose: 'idle_1', rank: null })), logMessage: `Đến lượt ${event.players[0].name}.` };
+  }
+  if (event.type === 'PAUSE') return state.gamePhase === 'finished' || state.isPaused === event.paused ? state : { ...state, isPaused: event.paused };
+  if (event.id !== state.actionId || state.isPaused || state.gamePhase === 'finished') return state;
+  const next = transition(state, event);
+  return next === state ? state : { ...next, actionId: state.actionId + 1 };
+}

@@ -13,5 +13,5 @@ module.exports = {
   transformIgnorePatterns: [
     'node_modules/(?!(@react-native-async-storage|react-native-web)/)',
   ],
-  testMatch: ['**/__tests__/**/*.test.[jt]s?(x)'],
+  testMatch: ['**/__tests__/**/*.test.[jt]s?(x)', '**/tests/**/*.test.[jt]s?(x)'],
 };

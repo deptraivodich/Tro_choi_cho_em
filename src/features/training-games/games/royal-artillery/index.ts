@@ -1,1 +1,0 @@
-export { RoyalArtilleryScreen } from './RoyalArtilleryScreen';

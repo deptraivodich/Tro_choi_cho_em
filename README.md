@@ -14,7 +14,7 @@
 1. **Thủ thành năng lượng** (`energy-defense`): Cộng trừ số thập phân & phân số (nạp năng lượng trụ laser, phòng thủ quái vật).
 2. **Giải cứu hành tinh** (`planet-rescue`): Rút gọn & quy đồng phân số (vượt 5-7 phòng dungeon, đấu trùm không gian).
 3. **Siêu xe vượt địa hình** (`terrain-racing`): Toán chuyển động $v = s / t$ (tinh chỉnh động cơ, bay qua khe núi qua 10 chặng).
-4. **Đua về đích** (`race-to-finish`): Nhận biết chẵn/lẻ, đếm bước tiến lùi & suy luận chiến thuật (đua xúc xắc 21 ô zíc zắc trong rừng phiêu lưu, khiên phép & sao giải trừ).
+4. **Đua về đích** (`race-to-finish`): Tung xúc xắc, giải toán lớp 5, chọn đường tắt và quay thưởng/phạt; đúng thì di chuyển đủ số ô xúc xắc, sai thì đứng yên.
 5. **Lãnh chúa đảo khối** (`block-island`): Diện tích & chu vi lưới ô vuông (loại bỏ cạnh trong, công thức tam giác & hình thang, thăm đảo máy).
 6. **Mật mã cửa hầm** (`vault-code`): Giá trị hàng, số thập phân & dấu hiệu chia hết (thử thách 3 mật mã/ngày x 5 lượt đoán & chế độ luyện tập).
 7. **Thương nhân chợ nổi** (`floating-market`): Đổi đơn vị khối lượng (tấn, tạ, yến, kg, g) & bài toán lời/lỗ kinh doanh ghe xuồng.
@@ -26,7 +26,7 @@
 
 ## 2. Yêu cầu môi trường & Công cụ
 
-- **Node.js**: Phiên bản 18.x hoặc 20.x LTS.
+- **Node.js**: Phiên bản 22.13 trở lên (Expo SDK 57).
 - **npm**: Đi kèm với Node.js.
 - **Trình duyệt Web**: Chrome, Edge, Safari hoặc Firefox (cho chế độ Web).
 - **Thiết bị chạy Expo Go / Android Emulator** (nếu muốn kiểm tra trên di động).
@@ -44,7 +44,7 @@ cd Tro_choi_cho_em
 ### Bước 2: Cài đặt thư viện phụ thuộc
 Dự án đã có sẵn file khóa `package-lock.json` đảm bảo tính nhất quán tuyệt đối về phiên bản:
 ```bash
-npm install
+npm ci
 ```
 
 ### Bước 3: Các lệnh thực thi (NPM Scripts)
@@ -54,7 +54,10 @@ npm install
 | `npm run web` | Khởi chạy ứng dụng trên nền tảng **Web** | Mặc định mở tại `http://localhost:8090` |
 | `npm run start` | Khởi chạy Metro Bundler cho Expo | Cổng 8090, quét mã QR qua Expo Go |
 | `npm run lan` | Khởi chạy Metro Bundler chế độ mạng LAN | Cho phép điện thoại cùng Wi-Fi kết nối |
-| `npm test` | Chạy toàn bộ **Jest Test Suite** (32 bài kiểm thử, bao gồm 15.000 mẫu sinh) | Kiểm tra toán học, storage, bộ sinh bài 500 mẫu/level |
+| `npm test` | Chạy toàn bộ **Jest Test Suite** (gameplay, toán, storage, registry và kiến trúc) | Kiểm tra toán học, storage, bộ sinh bài 500 mẫu/level |
+| `npm run test:race` | Kiểm tra riêng game Đua về đích | Có test reducer/controller và bot |
+| `npm run lint` | ESLint theo Expo | Lỗi của module mới được giữ mức error |
+| `npm run test:ui` | Touch automation với Chrome headless | Cần server; xem docs/race-verification.md |
 | `npm run typecheck` | Kiểm tra lỗi TypeScript chế độ nghiêm ngặt (`strict: true`) | Đảm bảo 0 lỗi kiểu dữ liệu |
 | `npm run export` | Đóng gói bundle tĩnh đa nền tảng | Xuất file ra thư mục `dist/` |
 
@@ -67,31 +70,38 @@ Cấu trúc dự án được phân chia ranh giới rõ ràng, sẵn sàng trí
 ```text
 Tro_choi_cho_em/
 ├── src/
-│   ├── app/                                # Điều phối Navigation (Expo Router)
-│   │   ├── _layout.tsx                     # Layout bọc ứng dụng (Stack)
-│   │   ├── index.tsx                       # Màn hình sảnh đón tiếp
-│   │   └── games/[gameId].tsx              # Màn hình chạy game theo ID
-│   └── features/training-games/            # MODULE ĐỘC LẬP HOÀN CHỈNH
-│       ├── TrainingGamesHome.tsx           # Sảnh 10 thẻ game, danh mục, bật/tắt âm
-│       ├── registry.ts                     # Danh bạ 10 trò chơi (metadata, component)
-│       ├── types.ts                        # Kiểu dữ liệu, GameSessionResult, Profile
-│       ├── components/                     # Header, Modal, Timer, FractionView, SVG Icons
-│       ├── core/                           # Nhân tính toán & quản lý trạng thái
-│       │   ├── audioController.ts          # Bộ phát âm thanh Web Audio API
-│       │   ├── game-loop/useGameTimer.ts   # Vòng lặp timer delta-time & tạm dừng
-│       │   ├── math/                       # Phân số, số thập phân, hình học, góc, bộ sinh
-│       │   └── storage/                    # Adapter lưu trữ local, quota, tiến độ
-│       └── games/                          # Mã nguồn và bàn chơi 2D của 10 game
-│           ├── energy-defense/
-│           ├── planet-rescue/
-│           ├── terrain-racing/
-│           ├── race-to-finish/
-│           ├── block-island/
-│           ├── vault-code/
-│           ├── floating-market/
-│           ├── rhythm-bakery/
-│           ├── treasure-dive/
-│           └── royal-artillery/
+│   ├── app/                       # Chỉ route của một Expo Router
+│   │   ├── _layout.tsx
+│   │   ├── index.tsx
+│   │   └── games/[gameId].tsx
+│   ├── screens/TrainingGamesHome.tsx
+│   ├── games/
+│   │   ├── index.ts
+│   │   ├── registry.ts
+│   │   ├── race-to-finish/
+│   │   │   ├── screens/
+│   │   │   ├── components/
+│   │   │   ├── hooks/
+│   │   │   ├── logic/              # Câu hỏi, chấm, answer bag, placement, reel
+│   │   │   ├── state/              # Reducer thuần + một scheduler
+│   │   │   ├── data/               # Graph bàn 50 điểm, hai đường tắt gốc
+│   │   │   ├── assets/             # Ảnh bàn, sprite, xúc xắc, icon gốc
+│   │   │   ├── types/
+│   │   │   ├── tests/
+│   │   │   └── index.ts
+│   │   └── <mỗi-game-khác>/        # Screen, component, tài nguyên riêng
+│   └── shared/
+│       ├── components/
+│       ├── hooks/
+│       ├── math/
+│       ├── audio/
+│       ├── storage/
+│       ├── theme/
+│       ├── types/
+│       └── tests/
+├── assets/                        # Icon của ứng dụng
+├── scripts/                       # Công cụ kiểm tra
+└── docs/                          # Audit, kiến trúc, nghiệm thu, screenshot
 ```
 
 ### Nguyên tắc bảo mật & phân lập:
@@ -105,10 +115,12 @@ Tro_choi_cho_em/
 ## 5. Nguồn gốc tài nguyên và Giấy phép
 
 1. **Đồ họa**:
-   - 100% hình minh họa và biểu tượng trò chơi được dựng bằng **Vector SVG** thuần (`react-native-svg`), không dùng emoji đơn thuần làm đồ họa chính.
+   - Các game sử dụng vector SVG; Đua về đích giữ bộ ảnh raster gốc tại `src/games/race-to-finish/assets/`.
    - Toàn bộ vector assets được tự thiết kế (Original Vector Artwork) phục vụ cho dự án giáo dục trẻ em, không sao chép nhân vật hoặc đồ họa từ bất kỳ trò chơi thương mại nào.
 2. **Âm thanh**:
    - Sử dụng bộ phát tín hiệu âm thanh kỹ thuật số tương thích cao (`Web Audio API Oscillator Synthesizer`): tiếng bíp, tiếng tinh xảo nạp năng lượng, tiếng hoàn thành màn chơi, tiếng nhịp gõ trống.
    - Không chứa bất kỳ file nhạc số nén MP3/WAV bản quyền nào.
    - Âm thanh chỉ phát sau khi người dùng tương tác và có thể bật/tắt bất kỳ lúc nào qua nút loa trên màn hình.
 3. **Mã nguồn**: Phát hành theo giấy phép **MIT License**.
+
+Tài liệu hiện tại: [kiến trúc đa game](docs/ARCHITECTURE.md), [audit lỗi](docs/race-audit.md), [báo cáo nghiệm thu](docs/race-verification.md).
