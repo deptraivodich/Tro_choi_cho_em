@@ -4,7 +4,7 @@ export const START_TILE_ID = 'tile_0';
 export const FINISH_TILE_ID = 'tile_49';
 
 // Data-driven Board Configuration matching reference image (1024x576)
-export const BOARD_TILES: Record<string, BoardTile> = {
+const BOARD_LAYOUT: Record<string, BoardTile> = {
   'tile_0': {
     id: 'tile_0',
     order: 0,
@@ -53,9 +53,9 @@ export const BOARD_TILES: Record<string, BoardTile> = {
     id: 'tile_4',
     order: 4,
     type: 'fork',
-    xPercent: 24.2,
-    yPercent: 21.9,
-    nextTileIds: { main: 'tile_5', shortcut: 'tile_11' },
+    xPercent: 20.7,
+    yPercent: 26.2,
+    nextTileIds: { main: 'tile_4_bonus', shortcut: 'tile_8_mid' },
     isFirstTenTiles: true,
     label: 'tile_4',
     shortDesc: 'Điểm rẽ (Chọn đường chính hoặc đường tắt)',
@@ -99,7 +99,7 @@ export const BOARD_TILES: Record<string, BoardTile> = {
     type: 'normal',
     xPercent: 35.0,
     yPercent: 33.0,
-    nextTileIds: { main: 'tile_9' },
+    nextTileIds: { main: 'tile_8_mid' },
     isFirstTenTiles: true,
     label: 'tile_8',
     shortDesc: 'Ô thường',
@@ -129,13 +129,13 @@ export const BOARD_TILES: Record<string, BoardTile> = {
   'tile_11': {
     id: 'tile_11',
     order: 11,
-    type: 'merge',
+    type: 'normal',
     xPercent: 28.1,
     yPercent: 56.9,
     nextTileIds: { main: 'tile_12' },
     isFirstTenTiles: false,
     label: 'tile_11',
-    shortDesc: 'Điểm nhập làn đường tắt',
+    shortDesc: 'Ô thường',
   },
   'tile_12': {
     id: 'tile_12',
@@ -231,7 +231,7 @@ export const BOARD_TILES: Record<string, BoardTile> = {
     type: 'normal',
     xPercent: 43.9,
     yPercent: 41.7,
-    nextTileIds: { main: 'tile_21' },
+    nextTileIds: { main: 'tile_20_mid' },
     isFirstTenTiles: false,
     label: 'tile_20',
     shortDesc: 'Ô thường',
@@ -316,24 +316,24 @@ export const BOARD_TILES: Record<string, BoardTile> = {
   'tile_28': {
     id: 'tile_28',
     order: 28,
-    type: 'normal',
+    type: 'bonus',
     xPercent: 60.3,
     yPercent: 57.1,
     nextTileIds: { main: 'tile_29' },
     isFirstTenTiles: false,
     label: 'tile_28',
-    shortDesc: 'Ô thường',
+    shortDesc: 'Ô Thưởng bí ẩn',
   },
   'tile_29': {
     id: 'tile_29',
     order: 29,
-    type: 'bonus',
+    type: 'normal',
     xPercent: 58.6,
     yPercent: 63.2,
     nextTileIds: { main: 'tile_30' },
     isFirstTenTiles: false,
     label: 'tile_29',
-    shortDesc: 'Ô Thưởng bí ẩn',
+    shortDesc: 'Ô thường',
   },
   'tile_30': {
     id: 'tile_30',
@@ -371,24 +371,24 @@ export const BOARD_TILES: Record<string, BoardTile> = {
   'tile_33': {
     id: 'tile_33',
     order: 33,
-    type: 'normal',
-    xPercent: 72.4,
-    yPercent: 64.2,
+    type: 'penalty',
+    xPercent: 71.7,
+    yPercent: 70.8,
     nextTileIds: { main: 'tile_34' },
     isFirstTenTiles: false,
     label: 'tile_33',
-    shortDesc: 'Ô thường',
+    shortDesc: 'Ô Phạt bí ẩn',
   },
   'tile_34': {
     id: 'tile_34',
     order: 34,
-    type: 'penalty',
-    xPercent: 71.7,
-    yPercent: 70.8,
+    type: 'normal',
+    xPercent: 72.4,
+    yPercent: 64.2,
     nextTileIds: { main: 'tile_35' },
     isFirstTenTiles: false,
     label: 'tile_34',
-    shortDesc: 'Ô Phạt bí ẩn',
+    shortDesc: 'Ô thường',
   },
   'tile_35': {
     id: 'tile_35',
@@ -495,7 +495,7 @@ export const BOARD_TILES: Record<string, BoardTile> = {
     type: 'normal',
     xPercent: 85.0,
     yPercent: 35.6,
-    nextTileIds: { main: 'tile_45' },
+    nextTileIds: { main: 'tile_44_mid' },
     isFirstTenTiles: false,
     label: 'tile_44',
     shortDesc: 'Ô thường',
@@ -528,20 +528,9 @@ export const BOARD_TILES: Record<string, BoardTile> = {
     type: 'normal',
     xPercent: 88.6,
     yPercent: 54.9,
-    nextTileIds: { main: 'tile_48' },
-    isFirstTenTiles: false,
-    label: 'tile_47',
-    shortDesc: 'Ô thường',
-  },
-  'tile_48': {
-    id: 'tile_48',
-    order: 48,
-    type: 'normal',
-    xPercent: 90.8,
-    yPercent: 62.5,
     nextTileIds: { main: 'tile_49' },
     isFirstTenTiles: false,
-    label: 'tile_48',
+    label: 'tile_47',
     shortDesc: 'Ô thường',
   },
   'tile_49': {
@@ -557,6 +546,33 @@ export const BOARD_TILES: Record<string, BoardTile> = {
   },
 };
 
+// These four circles exist in the artwork but were absent from the movement graph.
+// Keep existing IDs stable; order means actual steps along the visible main route.
+const insertedLayout: Omit<BoardTile, 'order' | 'isFirstTenTiles' | 'label'>[] = [
+  { id: 'tile_4_bonus', type: 'bonus', xPercent: 24.2, yPercent: 21.9, nextTileIds: { main: 'tile_5' }, shortDesc: 'Ô Thưởng bí ẩn' },
+  { id: 'tile_8_mid', type: 'merge', xPercent: 32.0, yPercent: 38.4, nextTileIds: { main: 'tile_9' }, shortDesc: 'Điểm nhập làn đường tắt' },
+  { id: 'tile_20_mid', type: 'normal', xPercent: 44.8, yPercent: 35.3, nextTileIds: { main: 'tile_21' }, shortDesc: 'Ô thường' },
+  { id: 'tile_44_mid', type: 'normal', xPercent: 83.8, yPercent: 42.1, nextTileIds: { main: 'tile_45' }, shortDesc: 'Ô thường' },
+];
+const insertedTiles: BoardTile[] = insertedLayout.map(tile => ({ ...tile, order: 0, isFirstTenTiles: false, label: tile.id }));
+for (const tile of insertedTiles) BOARD_LAYOUT[tile.id] = tile;
+
+export const BOARD_TILES: Record<string, BoardTile> = BOARD_LAYOUT;
+// Coordinates/route IDs stay fixed. Swap tile contents in both rules and artwork.
+export const TILE_ARTWORK_SOURCES: Readonly<Record<string, string>> = {
+  tile_4: 'tile_4_bonus', tile_4_bonus: 'tile_4',
+  tile_28: 'tile_29', tile_29: 'tile_28',
+};
+let routeId: string | undefined = START_TILE_ID;
+let routeOrder = 0;
+while (routeId) {
+  const tile: BoardTile = BOARD_TILES[routeId];
+  tile.order = routeOrder;
+  tile.isFirstTenTiles = routeOrder >= 1 && routeOrder <= 10;
+  routeOrder++;
+  routeId = tile.nextTileIds.main;
+}
+
 // Helper utilities
 export function getTile(tileId: string): BoardTile {
   return BOARD_TILES[tileId] || BOARD_TILES[START_TILE_ID];
@@ -570,6 +586,16 @@ export function isTileInFirstTen(tileId: string): boolean {
 export function getTileOrder(tileId: string): number {
   const tile = BOARD_TILES[tileId];
   return tile ? tile.order : 0;
+}
+
+// Screen coordinates: right = 0°, down = 90°. Use the same route as movement,
+// including every corner and both shortcut exits, rather than inferring from IDs.
+export function getTileDirection(tileId: string, width = 1024, height = 576): number | undefined {
+  const tile = BOARD_TILES[tileId];
+  const next = tile?.nextTileIds.main ? BOARD_TILES[tile.nextTileIds.main] : undefined;
+  if (!next) return undefined;
+  return Math.atan2((next.yPercent - tile.yPercent) * height,
+    (next.xPercent - tile.xPercent) * width) * 180 / Math.PI;
 }
 
 // Player positioning offset on the same tile so tokens do not completely overlap
@@ -589,9 +615,9 @@ export const SHORTCUTS = [
   {
     id: 'shortcut_1',
     forkTileId: 'tile_4',
-    mergeTileId: 'tile_11',
-    mainNextId: 'tile_5',
-    savedTilesCount: 6,
+    mergeTileId: 'tile_8_mid',
+    mainNextId: 'tile_4_bonus',
+    savedTilesCount: 5,
     name: 'Đường Tắt Rừng Thông',
   },
   {
@@ -599,7 +625,7 @@ export const SHORTCUTS = [
     forkTileId: 'tile_16',
     mergeTileId: 'tile_30',
     mainNextId: 'tile_17',
-    savedTilesCount: 13,
+    savedTilesCount: 14,
     name: 'Đường Tắt Ven Suối',
   },
 ];

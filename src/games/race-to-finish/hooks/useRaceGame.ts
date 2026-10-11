@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { RaceController } from '../state/RaceController';
+import { canChooseShortcut } from '../state/raceReducer';
 import { soundManager } from '../../../shared/audio/audioController';
 import { profileManager } from '../../../shared/storage/profileManager';
 
@@ -34,12 +35,14 @@ export function useRaceGame() {
   }, [state.winner, state.sessionId, state.correctCount, state.incorrectCount, startedAt]);
   return {
     ...state, saveError: saveFailure?.sessionId === state.sessionId ? saveFailure.message : null,
+    canChooseShortcut: canChooseShortcut(state),
     activePlayer: state.players[state.activePlayerIndex] || null,
     setIsPaused: (paused: boolean) => controller.send({ type: 'PAUSE', paused }),
     startGame: controller.startGame, handleRollDice: () => controller.roll(state.actionId),
     handleAnswer: (answer: string) => controller.answer(answer, state.actionId),
+    handleAcknowledgeAnswer: () => controller.acknowledgeAnswer(state.actionId),
+    getQuestionTimeRemaining: controller.getQuestionTimeRemaining,
     handleSelectBranch: (choice: 'main' | 'shortcut') => controller.branch(choice, state.actionId),
-    handleClaimBonus: () => controller.apply(false, state.actionId), handleApplyPenalty: () => controller.apply(false, state.actionId),
     handleUseCleanse: () => controller.apply(true, state.actionId),
     onMovementComplete: (id: number) => controller.send({ type: 'MOTION_DONE', id }),
     onSpinComplete: (id: number) => controller.send({ type: 'SPIN_DONE', id }),

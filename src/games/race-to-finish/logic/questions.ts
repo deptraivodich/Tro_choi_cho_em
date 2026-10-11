@@ -47,7 +47,11 @@ export function wrongAnswer(question: RaceQuestion): string {
 
 const calc = (op: '+' | '−' | '×' | '÷', left: Calculation | number, right: Calculation | number): Calculation =>
   ({ op, left: typeof left === 'number' ? rational(left) : left, right: typeof right === 'number' ? rational(right) : right });
-const print = (c: Calculation): string => 'n' in c ? formatAnswer(c) : `(${print(c.left)} ${c.op} ${print(c.right)})`;
+export function formatCalculation(c: Calculation): string {
+  if ('n' in c) return formatAnswer(c);
+  if (!['+', '−', '×', '÷'].includes(c.op)) throw new Error('Missing or invalid calculation operator');
+  return `(${formatCalculation(c.left)} ${c.op} ${formatCalculation(c.right)})`;
+}
 
 // All randomness is injected; templates are shuffled without replacement, and values vary each time.
 export class QuestionGenerator {
@@ -98,7 +102,7 @@ export class QuestionGenerator {
         }
         case 9: category = 'units'; unit = 'cm'; prompt = `Đổi ${formatAnswer(rational(a, 10))} m thành cm.`; calculation = calc('×', rational(a, 10), 100); explanation = '1 m = 100 cm, nên nhân số mét với 100.'; break;
         case 10: category = sequence % 2 ? 'perimeter' : 'area'; unit = sequence % 2 ? 'cm' : 'cm²'; prompt = `Hình chữ nhật dài ${a} cm, rộng ${b} cm. Tính ${sequence % 2 ? 'chu vi' : 'diện tích'}.`; calculation = sequence % 2 ? calc('×', calc('+', a, b), 2) : calc('×', a, b); explanation = sequence % 2 ? 'Chu vi = (dài + rộng) × 2.' : 'Diện tích = dài × rộng.'; break;
-        case 11: category = 'word-two-steps'; unit = 'quyển'; prompt = `Có ${b} hộp, mỗi hộp ${a} quyển vở. Đã tặng ${c} quyển. Còn lại bao nhiêu quyển?`; calculation = calc('−', calc('×', a, b), c); explanation = 'Tính tổng số vở trong các hộp rồi trừ số vở đã tặng.'; break;
+        case 11: category = 'word-two-steps'; unit = 'quyển'; prompt = `Có ${b} hộp, mỗi hộp ${a} quyển vở. Đã tặng đi ${c} quyển vở. Còn lại bao nhiêu quyển vở?`; calculation = calc('−', calc('×', a, b), c); explanation = 'Số vở còn lại = tổng số vở trong các hộp − số vở đã tặng đi.'; break;
         case 12: category = 'fraction-multiply'; calculation = calc('×', rational(a, c), rational(b, c)); break;
         default: category = 'fraction-divide'; calculation = calc('÷', rational(a, c), rational(b, c));
       }
@@ -108,15 +112,15 @@ export class QuestionGenerator {
         case 1: category = 'fraction-decimal'; calculation = calc('×', calc('+', rational(a, 4), rational(b, 10)), c); break;
         case 2: category = 'fraction-divide'; calculation = calc('÷', rational(a, c), rational(b, c)); break;
         case 3: category = 'percentage'; unit = 'học sinh'; prompt = `Một trường có ${a * 20} học sinh. ${b * 5}% tham gia câu lạc bộ toán. Có bao nhiêu học sinh tham gia?`; calculation = calc('÷', calc('×', a * 20, b * 5), 100); explanation = 'Số học sinh tham gia = tổng số học sinh × tỉ số phần trăm ÷ 100.'; break;
-        case 4: category = 'word-three-steps'; unit = 'đồng'; prompt = `Mua ${b} quyển vở giá ${a * 1000} đồng/quyển, được giảm 10% tổng tiền. Trả ${a * b * 1000 + 50000} đồng. Nhận lại bao nhiêu đồng?`; calculation = calc('−', a * b * 1000 + 50000, calc('÷', calc('×', a * b * 1000, 90), 100)); explanation = 'Tính tiền vở; giảm 10% tức trả 90%; lấy tiền đưa trừ tiền phải trả.'; break;
+        case 4: category = 'word-three-steps'; unit = 'đồng'; prompt = `Mua ${b} quyển vở giá ${a * 1000} đồng/quyển, được giảm 10% tổng tiền. Đưa ${a * b * 1000 + 50000} đồng cho người bán. Nhận lại bao nhiêu đồng?`; calculation = calc('−', a * b * 1000 + 50000, calc('÷', calc('×', a * b * 1000, 90), 100)); explanation = 'Tính tiền vở; giảm 10% tức trả 90%; lấy tiền đưa trừ tiền phải trả.'; break;
         case 5: category = 'triangle'; unit = 'cm²'; prompt = `Tam giác có đáy ${a * 2} cm, chiều cao bằng 1/2 đáy. Tính diện tích.`; calculation = calc('÷', calc('×', a * 2, a), 2); explanation = 'Chiều cao = đáy ÷ 2. Diện tích tam giác = đáy × chiều cao ÷ 2.'; break;
         case 6: category = 'trapezoid'; unit = 'cm²'; prompt = `Hình thang có hai đáy ${a} cm và ${a + b} cm, cao ${c * 2} cm. Tính diện tích.`; calculation = calc('÷', calc('×', calc('+', a, a + b), c * 2), 2); explanation = 'Diện tích hình thang = (đáy lớn + đáy bé) × chiều cao ÷ 2.'; break;
         default: category = 'logic'; unit = 'viên'; prompt = `An và Bình có tổng ${a * 2 + b * 2} viên bi. An nhiều hơn Bình ${b * 2} viên. Bình có bao nhiêu viên?`; calculation = calc('÷', calc('−', a * 2 + b * 2, b * 2), 2); explanation = 'Số bi của Bình = (tổng − hiệu) ÷ 2.';
       }
     }
     const answer = evaluateCalculation(calculation);
-    if (!prompt) prompt = `Tính ${print(calculation)}.`;
-    if (!explanation) explanation = `Thực hiện trong ngoặc trước, nhân/chia trước cộng/trừ: ${print(calculation)} = ${formatAnswer(answer)}.`;
+    if (!prompt) prompt = `Tính ${formatCalculation(calculation)}.`;
+    if (!explanation) explanation = `Thực hiện trong ngoặc trước, nhân/chia trước cộng/trừ: ${formatCalculation(calculation)} = ${formatAnswer(answer)}.`;
     return { key: `${difficulty}-${sequence}`, difficulty, category, prompt, answer, explanation, unit, calculation };
   }
 }

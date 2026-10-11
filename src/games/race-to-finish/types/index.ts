@@ -56,7 +56,7 @@ export interface Player {
   isBot: boolean;
   currentTileId: string; // 'tile_0' (start) up to 'tile_49' (finish)
   pathHistory: string[]; // stack of visited tile IDs for precise backtracking
-  position: number;      // numeric index (0 to 49) for ranking and stats
+  position: number;      // actual main-route order from boardConfig, used for ranking and stats
   hasShield: boolean;    // max 1 shield
   cleanseCount: number;  // max 1 cleanse star
   skipNextTurn: boolean; // if true, skipped once on next turn then reset
@@ -68,7 +68,7 @@ export type TileType = 'start' | 'normal' | 'bonus' | 'penalty' | 'fork' | 'merg
 
 export interface BoardTile {
   id: string;
-  order: number; // 0 for start, 1..49 on main path
+  order: number; // steps from start along the visible main path; independent of the stable tile ID
   type: TileType;
   xPercent: number; // 0..100% of board width
   yPercent: number; // 0..100% of board height

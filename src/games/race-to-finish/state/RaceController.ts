@@ -4,6 +4,7 @@ import { rollDice, rollMysteryBonus, rollMysteryPenalty, decideBotForkChoice, de
 import { BotAnswerBag, QuestionGenerator, RandomSource, answerText, wrongAnswer } from '../logic/questions';
 import { GameMode, Player, PenaltyEffectType } from '../types/index';
 import { RaceState, RaceEvent, initialRaceState, raceReducer } from './raceReducer';
+import { QUESTION_TIME_LIMIT_MS, MYSTERY_RESULT_DISPLAY_MS, CLEANSE_CHOICE_MS } from './turnTiming';
 
 // One scheduler owns all turn delays. Animation completion is an explicit event, never a guessed timer.
 export class RaceController {
@@ -17,23 +18,52 @@ export class RaceController {
   private generator: QuestionGenerator;
   private botBags = new Map<string, BotAnswerBag>();
   private rng: RandomSource;
+  private questionDeadline: number | null = null;
+  private questionRemaining = QUESTION_TIME_LIMIT_MS;
   constructor(rng?: RandomSource) {
     const random = new PRNG();
     this.rng = rng ?? (() => random.next());
     this.generator = new QuestionGenerator(this.rng);
   }
   getSnapshot = () => this.state;
+  getQuestionTimeRemaining = () => this.questionDeadline === null ? this.questionRemaining
+    : Math.max(0, this.questionDeadline - Date.now());
+  private freezeQuestionClock() {
+    this.questionRemaining = this.getQuestionTimeRemaining();
+    this.questionDeadline = null;
+  }
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
-  connect = () => { this.connected = true; this.schedule(); };
-  disconnect = () => { this.connected = false; this.cancelTimer(); };
+  connect = () => {
+    if (this.connected) return;
+    this.connected = true;
+    if (this.state.gamePhase === 'showing_question' && !this.state.isPaused)
+      this.questionDeadline = Date.now() + this.questionRemaining;
+    this.schedule();
+  };
+  disconnect = () => { this.freezeQuestionClock(); this.connected = false; this.cancelTimer(); };
   private cancelTimer() {
     if (this.timer !== null) clearTimeout(this.timer);
     this.timer = null; this.timerAction = null; this.remainingDelay = null;
   }
   send = (event: RaceEvent) => {
+    // An answer arriving at/after the deadline is a timeout, even if the JS
+    // timeout callback was delayed by rendering or a background browser tab.
+    if (event.type === 'ANSWER' && event.id === this.state.actionId && !this.state.isPaused &&
+        this.state.gamePhase === 'showing_question' && this.getQuestionTimeRemaining() <= 0)
+      event = { type: 'QUESTION_TIMEOUT', id: event.id };
     const next = raceReducer(this.state, event);
     if (next === this.state) return;
     const wasPaused = this.state.isPaused;
+    if (event.type === 'DICE_DONE') {
+      this.questionRemaining = QUESTION_TIME_LIMIT_MS;
+      this.questionDeadline = this.connected ? Date.now() + QUESTION_TIME_LIMIT_MS : null;
+    } else if (event.type === 'START') {
+      this.questionRemaining = QUESTION_TIME_LIMIT_MS; this.questionDeadline = null;
+    } else if (this.state.gamePhase === 'showing_question') {
+      if (next.gamePhase !== 'showing_question' || next.isPaused) this.freezeQuestionClock();
+      else if (wasPaused && !next.isPaused && this.connected)
+        this.questionDeadline = Date.now() + this.questionRemaining;
+    }
     if (event.type === 'PAUSE' && event.paused && this.timer !== null) {
       this.remainingDelay = Math.max(0, this.deadline - Date.now());
       clearTimeout(this.timer); this.timer = null;
@@ -54,6 +84,7 @@ export class RaceController {
     this.send({ type: 'ROLL', id, value: rollDice(this.rng) });
   };
   answer = (answer: string, id = this.state.actionId) => this.send({ type: 'ANSWER', id, answer });
+  acknowledgeAnswer = (id = this.state.actionId) => this.send({ type: 'ACKNOWLEDGE_ANSWER', id });
   branch = (choice: 'main' | 'shortcut', id = this.state.actionId) => this.send({ type: 'BRANCH', id, choice });
   apply = (cleanse = false, id = this.state.actionId) => this.send({ type: 'APPLY', id, cleanse });
   private delay(ms: number, action: () => void) {
@@ -80,8 +111,11 @@ export class RaceController {
         if (!bag) { bag = new BotAnswerBag(this.rng); this.botBags.set(player.id, bag); }
         const question = this.state.question;
         this.send({ type: 'ANSWER', id, answer: bag.next() ? answerText(question) : wrongAnswer(question) });
-      }); break;
-      case 'evaluating_answer': this.delay(this.state.answerCorrect ? 1100 : 2800, send({ type: 'ANSWER_FEEDBACK_DONE', id })); break;
+      }); else this.delay(this.getQuestionTimeRemaining(), send({ type: 'QUESTION_TIMEOUT', id })); break;
+      case 'evaluating_answer':
+        if (this.state.answerCorrect || player.isBot)
+          this.delay(this.state.answerCorrect ? 1100 : 2800, send({ type: 'ANSWER_FEEDBACK_DONE', id }));
+        break;
       case 'awaiting_fork_choice': if (player.isBot) this.delay(900, () => this.send({ type: 'BRANCH', id, choice: decideBotForkChoice() })); break;
       case 'evaluating_tile': this.delay(0, () => {
         const tile = getTile(player.currentTileId);
@@ -89,9 +123,10 @@ export class RaceController {
           : tile.type === 'penalty' ? rollMysteryPenalty(tile.id, undefined, this.rng) : undefined;
         this.send({ type: 'LAND', id, result });
       }); break;
-      case 'mystery_result': if (player.isBot) this.delay(1400, () => {
+      case 'mystery_result': this.delay(!player.isBot && this.state.mysteryRollState?.canUseCleanse
+        ? CLEANSE_CHOICE_MS : MYSTERY_RESULT_DISPLAY_MS, () => {
         const mystery = this.state.mysteryRollState;
-        this.send({ type: 'APPLY', id, cleanse: !!mystery?.canUseCleanse && decideBotCleanseUsage(mystery.result as PenaltyEffectType, player.position) });
+        this.send({ type: 'APPLY', id, cleanse: player.isBot && !!mystery?.canUseCleanse && decideBotCleanseUsage(mystery.result as PenaltyEffectType, player.position) });
       }); break;
       case 'turn_end': this.delay(700, send({ type: 'NEXT', id })); break;
     }

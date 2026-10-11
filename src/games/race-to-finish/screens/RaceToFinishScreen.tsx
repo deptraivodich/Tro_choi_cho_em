@@ -10,7 +10,7 @@ import {
 import { GameHeader } from '../../../shared/components/GameHeader';
 import { GameModal } from '../../../shared/components/GameModal';
 import { useRaceGame } from '../hooks/useRaceGame';
-import { GameBoardView } from '../components/GameBoardView';
+import { GameBoardView, PLAYABLE_BOARD_HEIGHT } from '../components/GameBoardView';
 import { PlayerBanner } from '../components/PlayerBanner';
 import { TurnDashboard } from '../components/TurnDashboard';
 import { SetupModal } from '../components/SetupModal';
@@ -20,10 +20,12 @@ import { ForkChoiceModal } from '../components/ForkChoiceModal';
 import { TurnHandoverModal } from '../components/TurnHandoverModal';
 import { VictoryModal } from '../components/VictoryModal';
 import { RACE_ASSETS } from '../assets/index';
-import { getTileOrder, getTile } from '../data/boardConfig';
+import { getTile } from '../data/boardConfig';
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import { useVietnameseGameText } from '../hooks/useVietnameseGameText';
 
 export const RaceToFinishScreen: React.FC<{ onExit: () => void }> = ({ onExit }) => {
+  useVietnameseGameText();
   const { width, height } = useWindowDimensions();
   const [modalType, setModalType] = useState<'pause' | 'tutorial' | null>(null);
   const boardScroll = useRef<ScrollView>(null);
@@ -33,7 +35,8 @@ export const RaceToFinishScreen: React.FC<{ onExit: () => void }> = ({ onExit })
   const reducedMotion = useReducedMotion();
 
   const {
-    gameMode, actionId, motion, question, submittedAnswer, answerCorrect, handleAnswer, onMovementComplete, onSpinComplete, saveError,
+    gameMode, actionId, motion, question, submittedAnswer, answerCorrect, answerFailure, handleAnswer,
+    handleAcknowledgeAnswer, getQuestionTimeRemaining, onMovementComplete, onSpinComplete, saveError,
     players,
     activePlayerIndex,
     activePlayer,
@@ -41,6 +44,7 @@ export const RaceToFinishScreen: React.FC<{ onExit: () => void }> = ({ onExit })
     currentDiceValue,
     mysteryRollState,
     forkChoiceState,
+    canChooseShortcut,
     winner,
     logMessage,
     isPaused,
@@ -48,8 +52,6 @@ export const RaceToFinishScreen: React.FC<{ onExit: () => void }> = ({ onExit })
     startGame,
     handleRollDice,
     handleSelectBranch,
-    handleClaimBonus,
-    handleApplyPenalty,
     handleUseCleanse,
     confirmHandover,
   } = useRaceGame();
@@ -151,7 +153,7 @@ export const RaceToFinishScreen: React.FC<{ onExit: () => void }> = ({ onExit })
                 onLayout={event => setBoardTop(event.nativeEvent.layout.y)}
                 horizontal
                 nestedScrollEnabled
-                style={{ width: '100%', height: boardHeight, flexGrow: 0, flexShrink: 0 }}
+                style={{ width: '100%', height: boardHeight * PLAYABLE_BOARD_HEIGHT, flexGrow: 0, flexShrink: 0 }}
                 showsHorizontalScrollIndicator={true}
                 contentContainerStyle={styles.scrollBoardContainer}
               >
@@ -162,11 +164,11 @@ export const RaceToFinishScreen: React.FC<{ onExit: () => void }> = ({ onExit })
                   activePlayerIndex={activePlayerIndex}
                   boardWidth={boardWidth}
                   boardHeight={boardHeight}
-                  activeForkTileId={forkChoiceState?.forkTileId}
+                  activeForkTileId={canChooseShortcut ? forkChoiceState?.forkTileId : undefined}
                 />
               </ScrollView>
             ) : (
-              <View style={styles.boardCenterWrapper}>
+              <View style={styles.boardCenterWrapper} onLayout={event => setBoardTop(event.nativeEvent.layout.y)}>
                 <GameBoardView
                   players={players}
                   moving={!!motion && (gamePhase === 'moving' || gamePhase === 'applying_effect')}
@@ -174,7 +176,7 @@ export const RaceToFinishScreen: React.FC<{ onExit: () => void }> = ({ onExit })
                   activePlayerIndex={activePlayerIndex}
                   boardWidth={boardWidth}
                   boardHeight={boardHeight}
-                  activeForkTileId={forkChoiceState?.forkTileId}
+                  activeForkTileId={canChooseShortcut ? forkChoiceState?.forkTileId : undefined}
                 />
               </View>
             )}
@@ -211,22 +213,19 @@ export const RaceToFinishScreen: React.FC<{ onExit: () => void }> = ({ onExit })
         paused={isPaused} revealed={gamePhase === 'mystery_result'}
         actionId={actionId} onSpinComplete={onSpinComplete}
         activePlayer={activePlayer}
-        onClaimReward={handleClaimBonus}
-        onApplyPenalty={handleApplyPenalty}
         onUseCleanse={handleUseCleanse}
       />
 
       {question && activePlayer && <MathQuestionModal key={question.key} question={question}
         player={activePlayer} dice={currentDiceValue} submittedAnswer={submittedAnswer}
-        correct={answerCorrect} paused={isPaused} onAnswer={handleAnswer} />}
+        correct={answerCorrect} failure={answerFailure} paused={isPaused} onAnswer={handleAnswer}
+        onAcknowledge={handleAcknowledgeAnswer} getTimeRemaining={getQuestionTimeRemaining} />}
       {saveError && <Text accessibilityRole="alert">{saveError}</Text>}
 
       {/* 3. Fork Branch Selection Modal */}
       <ForkChoiceModal
-        visible={gamePhase === 'awaiting_fork_choice'}
+        visible={canChooseShortcut}
         activePlayer={activePlayer}
-        remainingSteps={forkChoiceState?.remainingSteps || 1}
-        forkTileOrder={forkChoiceState ? getTileOrder(forkChoiceState.forkTileId) : 4}
         onSelectBranch={handleSelectBranch}
         paused={isPaused}
       />
@@ -279,7 +278,8 @@ export const RaceToFinishScreen: React.FC<{ onExit: () => void }> = ({ onExit })
             </Text>
             <Text style={styles.tutText}>
               ⚡ **Đường Tắt**:
-              {'\n'}• Tại các điểm rẽ (có ký hiệu mũi tên trắng {`>>>`}), em được chọn đi **Đường chính** hoặc phóng qua **Đường tắt** để bỏ qua nhiều ô chướng ngại vật!
+              {'\n'}• Đổ đúng số, giải toán đúng và dừng đúng ô vào cạnh mũi tên trắng {`>>>`} mới được chọn **Đường tắt**. Đi ngang qua, tiến thêm do thưởng hoặc lùi về ô vào đều không kích hoạt.
+              {'\n'}• Chọn **Đường chính** để ở lại ô vừa dừng; chọn **Đường tắt** để chạy tới đầu bên kia mà không dùng thêm bước xúc xắc.
             </Text>
             <Text style={styles.tutText}>
               🎁 **Ô Thưởng Bí Ẩn**:
@@ -323,11 +323,9 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   arenaContent: {
-    flexGrow: 1,
     width: '100%',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingBottom: 4,
+    paddingBottom: 12,
   },
   topAreaOverlay: {
     width: '100%',
@@ -341,7 +339,6 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   boardCenterWrapper: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -352,6 +349,7 @@ const styles = StyleSheet.create({
   },
   bottomAreaOverlay: {
     width: '100%',
+    maxWidth: 640,
     zIndex: 10,
   },
   tutText: {

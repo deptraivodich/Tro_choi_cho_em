@@ -1,0 +1,3 @@
+export const QUESTION_TIME_LIMIT_MS = 30_000;
+export const MYSTERY_RESULT_DISPLAY_MS = 1_400;
+export const CLEANSE_CHOICE_MS = 5_000;

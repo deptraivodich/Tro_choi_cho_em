@@ -5,15 +5,16 @@ import { BONUS_METADATA, PENALTY_METADATA } from '../logic/gameEngine';
 import { reelPlan, REEL_CARD_WIDTH, REEL_STRIDE } from '../logic/reelPlan';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { RACE_ASSETS } from '../assets/index';
+import { CLEANSE_CHOICE_MS } from '../state/turnTiming';
 
 interface MysteryRollModalProps {
   visible: boolean; state: MysteryRollState | null; activePlayer: Player | null;
   paused: boolean; revealed: boolean; actionId: number; onSpinComplete: (id: number) => void;
-  onClaimReward: () => void; onApplyPenalty: () => void; onUseCleanse: () => void;
+  onUseCleanse: () => void;
 }
 export const MysteryRollModal: React.FC<MysteryRollModalProps> = ({
   visible, state, activePlayer, paused, revealed, actionId, onSpinComplete,
-  onClaimReward, onApplyPenalty, onUseCleanse,
+  onUseCleanse,
 }) => {
   const [translateX] = useState(() => new Animated.Value(0));
   const [viewportWidth, setViewportWidth] = useState(0);
@@ -47,7 +48,9 @@ export const MysteryRollModal: React.FC<MysteryRollModalProps> = ({
       <View style={styles.backdrop}>
         <ScrollView style={[styles.modalCard, isBonus ? styles.bonusCard : styles.penaltyCard]} contentContainerStyle={{ alignItems: 'center' }}>
           <View style={[styles.headerBanner, isBonus ? styles.bonusBanner : styles.penaltyBanner]}>
-            <Text style={styles.headerTitle}>{isBonus ? 'Ô THƯỞNG BÍ ẨN' : 'Ô PHẠT BÍ ẨN'}</Text>
+            <Text testID="mystery-title" style={styles.headerTitle}>
+              {isBonus ? 'Ô Thưởng Bí Ẩn' : 'Ô Phạt Bí Ẩn'}
+            </Text>
             <Text style={styles.headerSubtitle}>Các kết quả có thể nhận</Text>
           </View>
           <Text style={styles.possibleResults}>{plan.options.map(key => metadata(key).title).join(' • ')}</Text>
@@ -80,19 +83,13 @@ export const MysteryRollModal: React.FC<MysteryRollModalProps> = ({
             <Text style={styles.shieldNoticeText}>Khiên tự động bảo vệ và chặn hình phạt này!</Text>
           </View>}
           {!revealed ? <Text style={styles.spinningText}>Chờ vòng quay dừng...</Text> : <View style={styles.actionContainer}>
-            {isBonus ? <TouchableOpacity testID="claim-reward" disabled={isBot || paused} style={[styles.actionBtn, styles.claimBtn]} onPress={onClaimReward}>
-              <Text style={styles.claimBtnText}>NHẬN THƯỞNG</Text>
-            </TouchableOpacity> : state.canUseCleanse ? <View style={styles.cleanseChoiceRow}>
+            {!isBonus && state.canUseCleanse && !isBot && <View style={styles.cleanseChoiceRow}>
               <TouchableOpacity testID="use-cleanse" disabled={isBot || paused} style={[styles.actionBtn, styles.useCleanseBtn]} onPress={onUseCleanse}>
-                <Text style={styles.claimBtnText}>DÙNG NGÔI SAO HÓA GIẢI</Text>
+                <Text style={styles.actionBtnText}>DÙNG NGÔI SAO HÓA GIẢI</Text>
               </TouchableOpacity>
-              <TouchableOpacity testID="apply-penalty" disabled={isBot || paused} style={[styles.actionBtn, styles.applyPenaltyBtn]} onPress={onApplyPenalty}>
-                <Text style={styles.applyBtnText}>CHẤP NHẬN PHẠT</Text>
-              </TouchableOpacity>
-            </View> : <TouchableOpacity testID="apply-penalty" disabled={isBot || paused} style={[styles.actionBtn, state.hasShieldProtection ? styles.shieldDismissBtn : styles.applyPenaltyBtn]} onPress={onApplyPenalty}>
-              <Text style={styles.applyBtnText}>{state.hasShieldProtection ? 'TIÊU THỤ KHIÊN & TIẾP TỤC' : 'ÁP DỤNG HÌNH PHẠT'}</Text>
-            </TouchableOpacity>}
-            {isBot && <Text style={styles.spinningText}>Máy đang xem kết quả...</Text>}
+              <Text style={styles.spinningText}>Tự áp dụng sau {CLEANSE_CHOICE_MS / 1000} giây nếu em không dùng sao.</Text>
+            </View>}
+            <Text style={styles.spinningText}>{paused ? 'Đang tạm dừng' : 'Kết quả sẽ được tự động áp dụng.'}</Text>
           </View>}
         </ScrollView>
       </View>
@@ -151,9 +148,8 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '900',
     color: '#FFFFFF',
-    textShadowColor: 'rgba(0, 0, 0, 0.6)',
-    textShadowOffset: { width: 1, height: 2 },
-    textShadowRadius: 4,
+    lineHeight: 30,
+    textAlign: 'center',
   },
   headerSubtitle: {
     fontSize: 13,
@@ -304,22 +300,10 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 6,
   },
-  claimBtn: {
-    backgroundColor: '#10B981',
-    borderWidth: 2,
-    borderColor: '#6EE7B7',
-    width: '100%',
-  },
-  claimBtnText: {
+  actionBtnText: {
     fontSize: 16,
     fontWeight: '900',
     color: '#FFFFFF',
-  },
-  shieldDismissBtn: {
-    backgroundColor: '#059669',
-    borderWidth: 2,
-    borderColor: '#34D399',
-    width: '100%',
   },
   cleanseChoiceRow: {
     width: '100%',
@@ -331,16 +315,5 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#FCD34D',
     width: '100%',
-  },
-  applyPenaltyBtn: {
-    backgroundColor: '#DC2626',
-    borderWidth: 2,
-    borderColor: '#FCA5A5',
-    width: '100%',
-  },
-  applyBtnText: {
-    fontSize: 15,
-    fontWeight: '900',
-    color: '#FFFFFF',
   },
 });

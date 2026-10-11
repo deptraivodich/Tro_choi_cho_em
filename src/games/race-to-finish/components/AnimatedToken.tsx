@@ -4,6 +4,7 @@ import { Player } from '../types/index';
 import { RACE_ASSETS } from '../assets/index';
 import { TokenPlacement } from '../logic/tokenPlacement';
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import { SHORTCUTS } from '../data/boardConfig';
 
 interface Props {
   player: Player; placement: TokenPlacement; active: boolean; moving: boolean; paused: boolean;
@@ -14,18 +15,20 @@ export function AnimatedToken({ player, placement, active, moving, paused, actio
   const callback = useRef(onComplete);
   useLayoutEffect(() => { callback.current = onComplete; }, [onComplete]);
   const reduced = useReducedMotion();
+  const traversingShortcut = moving && SHORTCUTS.some(shortcut =>
+    player.currentTileId === shortcut.mergeTileId && player.pathHistory[player.pathHistory.length - 2] === shortcut.forkTileId);
   useEffect(() => {
     if (paused) return;
     let alive = true;
     const animation = Animated.timing(position, {
-      toValue: { x: placement.x, y: placement.y }, duration: reduced ? 70 : moving ? 280 : 180,
+      toValue: { x: placement.x, y: placement.y }, duration: reduced ? 70 : moving ? (traversingShortcut ? 800 : 280) : 180,
       easing: Easing.inOut(Easing.quad), useNativeDriver: true,
     });
     animation.start(({ finished }) => {
       if (alive && finished && moving) callback.current(actionId);
     });
     return () => { alive = false; animation.stop(); };
-  }, [position, placement.x, placement.y, moving, paused, actionId, reduced]);
+  }, [position, placement.x, placement.y, moving, paused, actionId, reduced, traversingShortcut]);
   const assets = RACE_ASSETS.characters[player.character];
   return (
     <Animated.View testID={`token-${player.id}`} accessibilityLabel={`${player.name}: ${player.currentTileId}`}

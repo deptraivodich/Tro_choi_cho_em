@@ -52,3 +52,6 @@ coverage/
 /artifacts/
 .eslintcache
 /docs/screenshots/legacy/
+
+# Local reference videos/screenshots supplied for race fixes
+/docs/references/race/
