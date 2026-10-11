@@ -19,7 +19,7 @@ Phân công một game cho mỗi branch/worktree. Agent làm race chỉ chỉnh 
 
 ## Đua về đích
 
-- data/boardConfig.ts giữ nguyên 50 điểm và graph đường chính/đường tắt trước khi sửa.
+- data/boardConfig.ts đối chiếu 53 vị trí thật trên ảnh board; giữ IDs lịch sử và tính order theo đường chính. Xem docs/race-reference-analysis.md về các ô bị thiếu, ô giả và đầu ra đường tắt đã sửa. Đường tắt chỉ được chọn sau khi quân đi hết bước và dừng đúng cửa vào.
 - state/raceReducer.ts là transition thuần, nhận event có actionId. turnId và sessionId tách lượt/phiên; actionId tăng theo mọi transition được nhận. Event cũ hoặc sai phase bị bỏ qua.
 - state/RaceController.ts giữ một timer tại mỗi thời điểm; lưu thời gian còn lại khi pause, hủy khi đổi action, restart hoặc disconnect. RNG được inject từ một PRNG; generator và từng bot bag thuộc phiên.
 - hooks/useRaceGame.ts dùng useSyncExternalStore, nối storage/audio và public UI actions. Không mảng players từ callback cũ nào có thể ghi lại state.

@@ -1,9 +1,12 @@
 import { PRNG } from '../../../shared/math/prng';
-import { BotAnswerBag, Calculation, QuestionGenerator, answerText, gradeAnswer, questionDifficulty, wrongAnswer } from '../logic/questions';
+import { BotAnswerBag, Calculation, QuestionGenerator, answerText, gradeAnswer, questionDifficulty, wrongAnswer, formatCalculation } from '../logic/questions';
 import { parseExactAnswer, rational } from '../logic/exactAnswer';
+import { BOARD_TILES, getTileOrder, FINISH_TILE_ID } from '../data/boardConfig';
 
 test('difficulty uses main-route progress including shortcut merges', () => {
-  for (let order = 0; order < 50; order++) expect(questionDifficulty(`tile_${order}`)).toBe(order < 33 ? 'medium' : 'challenge');
+  for (const tile of Object.values(BOARD_TILES)) {
+    expect(questionDifficulty(tile.id)).toBe(tile.order / getTileOrder(FINISH_TILE_ID) < 2 / 3 ? 'medium' : 'challenge');
+  }
   expect(questionDifficulty('tile_11')).toBe('medium'); expect(questionDifficulty('tile_30')).toBe('medium');
 });
 test('decimal and equivalent fractions are exact; invalid input rejected', () => {
@@ -35,6 +38,18 @@ test('2400 generated questions are diverse, positive, and mathematically verifie
       // Independent checks against word-problem data extracted from what the child sees.
       const numbers = question.prompt.match(/\d+/g)?.map(Number) ?? [];
       if (question.category === 'word-two-steps') expect(actual).toBe(numbers[0] * numbers[1] - numbers[2]);
+      if (question.category === 'word-two-steps') {
+        expect(question.prompt).toContain('Đã tặng đi'); expect(question.prompt).toContain('Còn lại');
+        expect(question.prompt).not.toContain('Được tặng');
+      }
+      if (['area', 'perimeter'].includes(question.category)) {
+        expect(question.prompt).toMatch(/^Hình chữ nhật dài \d+ cm, rộng \d+ cm\. Tính (diện tích|chu vi)\.$/);
+      }
+      expect(question.prompt).not.toMatch(/cặp nhật|tích cực|\d+\s+\d+\)/);
+      if (question.prompt.startsWith('Tính (')) {
+        const operators = (c: Calculation): number => 'n' in c ? 0 : 1 + operators(c.left) + operators(c.right);
+        expect(question.prompt.match(/[+−×÷]/g)).toHaveLength(operators(question.calculation!));
+      }
       if (question.category === 'percentage') expect(actual).toBe(numbers[0] * numbers[1] / 100);
       if (question.category === 'logic') expect(actual).toBe((numbers[0] - numbers[1]) / 2);
       if (question.category === 'triangle') expect(actual).toBe(numbers[0] * (numbers[0] / 2) / 2);
@@ -43,6 +58,14 @@ test('2400 generated questions are diverse, positive, and mathematically verifie
     }
   }
   expect(categories.size).toBeGreaterThanOrEqual(20);
+});
+
+test('reported expression preserves division, and fractional division preserves both separators', () => {
+  const expression: Calculation = { op: '+', left: { op: '×', left: { op: '−', left: rational(65), right: rational(6) },
+    right: rational(10) }, right: { op: '÷', left: rational(60), right: rational(6) } };
+  expect(formatCalculation(expression)).toBe('(((65 − 6) × 10) + (60 ÷ 6))');
+  expect(formatCalculation({ op: '÷', left: rational(1, 3), right: rational(2, 3) })).toBe('(1/3 ÷ 2/3)');
+  expect(() => formatCalculation({ op: '', left: rational(60), right: rational(6) } as unknown as Calculation)).toThrow();
 });
 test('constant mock RNG still yields fresh questions and terminates', () => {
   const generator = new QuestionGenerator(() => 0); const prompts = new Set<string>();

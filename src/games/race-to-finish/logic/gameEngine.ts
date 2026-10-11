@@ -30,10 +30,10 @@ export interface BonusPoolConfig {
 
 export const DEFAULT_BONUS_POOL: BonusPoolConfig = {
   options: [
-    { type: 'advance_1', weight: 25 },
-    { type: 'advance_2', weight: 25 },
-    { type: 'shield', weight: 25 },
-    { type: 'cleanse', weight: 25 },
+    { type: 'advance_1', weight: 32 },
+    { type: 'advance_2', weight: 32 },
+    { type: 'shield', weight: 18 },
+    { type: 'cleanse', weight: 18 },
   ],
 };
 
@@ -48,10 +48,10 @@ export interface PenaltyPoolConfig {
 
 export const DEFAULT_PENALTY_POOL: PenaltyPoolConfig = {
   firstTenTiles: [
-    { type: 'retreat_1', weight: 25 },
-    { type: 'retreat_2', weight: 25 },
-    { type: 'skip_turn', weight: 25 },
-    { type: 'reset_start', weight: 25 }, // Only valid within first 10 tiles!
+    { type: 'retreat_1', weight: 24 },
+    { type: 'retreat_2', weight: 23 },
+    { type: 'skip_turn', weight: 23 },
+    { type: 'reset_start', weight: 30 }, // Only valid within first 10 tiles!
   ],
   afterTenTiles: [
     { type: 'retreat_1', weight: 33.33 },

@@ -6,6 +6,10 @@ import { Player } from '../types/index';
 import { RACE_ASSETS } from '../assets/index';
 import { AnimatedToken } from './AnimatedToken';
 import { tokenPlacements } from '../logic/tokenPlacement';
+import { BoardCorrections } from './BoardCorrections';
+
+// Only the bottom, painted mock dice panel is clipped; the playable map is intact.
+export const PLAYABLE_BOARD_HEIGHT = 0.80;
 
 interface GameBoardViewProps {
   players: Player[];
@@ -30,13 +34,14 @@ export const GameBoardView: React.FC<GameBoardViewProps> = ({
   const placements = tokenPlacements(players, boardWidth, boardHeight);
 
   return (
-    <View style={[styles.container, { width: boardWidth, height: boardHeight }]}>
+    <View testID="race-board" style={[styles.container, { width: boardWidth, height: boardHeight * PLAYABLE_BOARD_HEIGHT }]}>
       {/* 1. Background Landscape Map Image */}
       <Image
         source={RACE_ASSETS.mapLandscape}
         style={[styles.mapImage, { width: boardWidth, height: boardHeight }]}
         resizeMode="contain"
       />
+      <BoardCorrections width={boardWidth} height={boardHeight} />
 
       {/* 2. SVG Highlights for Shortcuts and Active Forks */}
       <Svg width={boardWidth} height={boardHeight} style={StyleSheet.absoluteFill}>

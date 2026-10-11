@@ -6,8 +6,6 @@ import { soundManager } from '../../../shared/audio/audioController';
 interface ForkChoiceModalProps {
   visible: boolean;
   activePlayer: Player | null;
-  remainingSteps: number;
-  forkTileOrder: number;
   onSelectBranch: (choice: 'main' | 'shortcut') => void;
   paused: boolean;
 }
@@ -15,7 +13,6 @@ interface ForkChoiceModalProps {
 export const ForkChoiceModal: React.FC<ForkChoiceModalProps> = ({
   visible,
   activePlayer,
-  remainingSteps,
   onSelectBranch,
   paused,
 }) => {
@@ -28,7 +25,7 @@ export const ForkChoiceModal: React.FC<ForkChoiceModalProps> = ({
           <Text style={styles.badge}>NGÃ RẼ CHIẾN THUẬT</Text>
           <Text style={styles.title}>CHỌN TUYẾN ĐƯỜNG ĐI TIẾP</Text>
           <Text style={styles.subtitle}>
-            {activePlayer.name} còn {remainingSteps} bước di chuyển. Bạn muốn đi theo hướng nào?
+            {activePlayer.name} đã đi hết số bước và dừng đúng lối vào. Bạn muốn ở lại đường chính hay đi đường tắt?
           </Text>
 
           <View style={styles.choicesRow}>
@@ -45,7 +42,7 @@ export const ForkChoiceModal: React.FC<ForkChoiceModalProps> = ({
             >
               <Text style={styles.cardHeader}>ĐƯỜNG CHÍNH</Text>
               <Text style={styles.cardDesc}>
-                Đường mòn uốn lượn quen thuộc quanh sườn núi.
+                Ở lại ô vừa dừng. Lượt sau tiếp tục đường mòn quanh sườn núi.
               </Text>
               <View style={styles.selectBtnMain}>
                 <Text style={styles.btnText}>CHỌN ĐƯỜNG CHÍNH</Text>

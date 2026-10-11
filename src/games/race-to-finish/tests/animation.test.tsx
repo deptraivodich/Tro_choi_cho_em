@@ -19,7 +19,6 @@ test('board render includes two stable player tokens without tile number labels'
 test('hidden mystery modal does not mount a reel or launch a spin', () => {
   const complete = jest.fn();
   const html = renderToStaticMarkup(<MysteryRollModal visible={false} state={null} activePlayer={players[0]}
-    paused={false} revealed={false} actionId={1} onSpinComplete={complete} onClaimReward={() => {}}
-    onApplyPenalty={() => {}} onUseCleanse={() => {}} />);
+    paused={false} revealed={false} actionId={1} onSpinComplete={complete} onUseCleanse={() => {}} />);
   expect(html).toBe(''); expect(complete).not.toHaveBeenCalled();
 });

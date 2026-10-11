@@ -2,7 +2,7 @@ import { initialRaceState, RaceState, RaceEvent, raceReducer } from '../state/ra
 import { Player, BonusEffectType, PenaltyEffectType } from '../types/index';
 import { QuestionGenerator, answerText } from '../logic/questions';
 import { PRNG } from '../../../shared/math/prng';
-import { getTile } from '../data/boardConfig';
+import { BOARD_TILES, getTile, getTileOrder, SHORTCUTS } from '../data/boardConfig';
 import { rollMysteryPenalty, DEFAULT_PENALTY_POOL } from '../logic/gameEngine';
 import { tokenPlacements } from '../logic/tokenPlacement';
 import { reelPlan, REEL_STRIDE } from '../logic/reelPlan';
@@ -24,16 +24,19 @@ function correctMove(dice = 2) {
   startQuestion(dice); event({ type: 'ANSWER', answer: answerText(s.question!) }); event({ type: 'ANSWER_FEEDBACK_DONE' });
 }
 function completeMotion(choice: 'main' | 'shortcut' = 'main') {
-  for (let i = 0; i < 20 && (s.motion || s.gamePhase === 'awaiting_fork_choice'); i++) {
+  for (let i = 0; i < 20 && (s.motion || s.gamePhase === 'awaiting_fork_choice' ||
+      (s.gamePhase === 'evaluating_tile' && getTile(s.players[s.activePlayerIndex].currentTileId).type === 'fork')); i++) {
     if (s.gamePhase === 'awaiting_fork_choice') event({ type: 'BRANCH', choice });
+    else if (s.gamePhase === 'evaluating_tile') event({ type: 'LAND' });
     else event({ type: 'MOTION_DONE' });
   }
 }
-function at(tile: number, flags: Partial<Player> = {}) {
-  s = { ...s, players: [{ ...s.players[0], currentTileId: `tile_${tile}`, position: tile,
-    pathHistory: Array.from({ length: tile + 1 }, (_, i) => `tile_${i}`), ...flags }, s.players[1]] };
+function at(tile: number | string, flags: Partial<Player> = {}) {
+  const tileId = typeof tile === 'number' ? `tile_${tile}` : tile;
+  s = { ...s, players: [{ ...s.players[0], currentTileId: tileId, position: getTileOrder(tileId),
+    pathHistory: Object.values(BOARD_TILES).sort((a, b) => a.order - b.order).slice(0, getTileOrder(tileId) + 1).map(t => t.id), ...flags }, s.players[1]] };
 }
-function mystery(tile: number, result: BonusEffectType | PenaltyEffectType, flags: Partial<Player> = {}) {
+function mystery(tile: number | string, result: BonusEffectType | PenaltyEffectType, flags: Partial<Player> = {}) {
   at(tile, flags); s = { ...s, gamePhase: 'evaluating_tile' }; event({ type: 'LAND', result }); event({ type: 'SPIN_DONE' });
 }
 beforeEach(() => { s = raceReducer(initialRaceState, { type: 'START', mode: 'single', players: [player(), player('p2')] }); });
@@ -52,7 +55,9 @@ test('dice and question cannot move a token; correct answer unlocks precisely N 
 });
 test('wrong answer stays in place and ends the turn', () => {
   at(12); startQuestion(6); event({ type: 'ANSWER', answer: 'not an answer' });
-  expect(s.answerCorrect).toBe(false); event({ type: 'ANSWER_FEEDBACK_DONE' });
+  expect(s.answerCorrect).toBe(false); const feedback = s;
+  event({ type: 'ANSWER_FEEDBACK_DONE' }); expect(s).toBe(feedback);
+  event({ type: 'ACKNOWLEDGE_ANSWER' });
   expect(s.players[0].currentTileId).toBe('tile_12'); expect(s.gamePhase).toBe('turn_end');
   event({ type: 'NEXT' }); expect(s.activePlayerIndex).toBe(1);
 });
@@ -75,14 +80,45 @@ test('many handovers do not reset either token', () => {
     expect(s.players[1].position).toBe(Math.floor((turn + 1) / 2));
   }
 });
-test('fork choice happens after reaching fork and after a stationary fork roll', () => {
-  correctMove(6); for (let i = 0; i < 4; i++) event({ type: 'MOTION_DONE' });
-  expect(s.gamePhase).toBe('awaiting_fork_choice'); expect(s.players[0].currentTileId).toBe('tile_4');
-  event({ type: 'BRANCH', choice: 'shortcut' }); completeMotion(); expect(s.players[0].currentTileId).toBe('tile_12');
-  expect(s.players[0].pathHistory).toEqual(['tile_0', 'tile_1', 'tile_2', 'tile_3', 'tile_4', 'tile_11', 'tile_12']);
-  s = { ...s, gamePhase: 'ready_to_roll' }; at(16); correctMove(1);
-  expect(s.gamePhase).toBe('awaiting_fork_choice'); event({ type: 'BRANCH', choice: 'shortcut' }); completeMotion();
-  expect(s.players[0].currentTileId).toBe('tile_30');
+test.each(SHORTCUTS)('$id: only an exact landing opens a choice, after the last animation', shortcut => {
+  const before = Object.values(BOARD_TILES).find(tile => tile.nextTileIds.main === shortcut.forkTileId)!;
+  at(before.id); correctMove(1);
+  expect(s.players[0].currentTileId).toBe(shortcut.forkTileId);
+  expect(s.gamePhase).toBe('moving'); // The character must finish arriving first.
+  event({ type: 'MOTION_DONE' });
+  expect(s.gamePhase).toBe('evaluating_tile'); expect(s.forkChoiceState).toBeNull();
+  event({ type: 'LAND' });
+  expect(s.gamePhase).toBe('awaiting_fork_choice'); expect(s.motion).toBeNull();
+  expect(s.forkChoiceState?.remainingSteps).toBe(0);
+  event({ type: 'BRANCH', choice: 'shortcut' });
+  expect(s.gamePhase).toBe('applying_effect'); expect(s.winner).toBeNull();
+  completeMotion();
+  expect(s.players[0].currentTileId).toBe(shortcut.mergeTileId);
+  expect(s.players[0].pathHistory.slice(-2)).toEqual([shortcut.forkTileId, shortcut.mergeTileId]);
+  expect(s.gamePhase).toBe('turn_end');
+});
+test.each(SHORTCUTS)('$id: passing the entry with dice 2..6 never opens a branch', shortcut => {
+  const before = Object.values(BOARD_TILES).find(tile => tile.nextTileIds.main === shortcut.forkTileId)!;
+  for (let dice = 2; dice <= 6; dice++) {
+    s = { ...s, gamePhase: 'ready_to_roll' }; at(before.id); correctMove(dice);
+    while (s.motion) {
+      expect(s.gamePhase).not.toBe('awaiting_fork_choice');
+      const moving = s; event({ type: 'LAND' }); expect(s).toBe(moving);
+      event({ type: 'BRANCH', choice: 'shortcut' }); expect(s).toBe(moving);
+      event({ type: 'MOTION_DONE' });
+    }
+    expect(s.gamePhase).toBe('evaluating_tile');
+    expect(s.players[0].position).toBe(before.order + dice);
+    expect(s.players[0].pathHistory).toContain(shortcut.mainNextId);
+    expect(s.forkChoiceState).toBeNull();
+  }
+});
+test.each(SHORTCUTS)('$id: choosing main stays put, and next roll follows main without reopening choice', shortcut => {
+  const before = Object.values(BOARD_TILES).find(tile => tile.nextTileIds.main === shortcut.forkTileId)!;
+  at(before.id); correctMove(1); completeMotion('main');
+  expect(s.players[0].currentTileId).toBe(shortcut.forkTileId); expect(s.gamePhase).toBe('turn_end');
+  s = { ...s, gamePhase: 'ready_to_roll' }; correctMove(1); completeMotion();
+  expect(s.players[0].currentTileId).toBe(shortcut.mainNextId); expect(s.gamePhase).toBe('evaluating_tile');
 });
 test('pause rejects gameplay without changing logical position; resume preserves the same motion', () => {
   correctMove(2); const moving = s;
@@ -96,27 +132,94 @@ test.each(['advance_1', 'advance_2'] as const)('%s applied once and never chains
   expect(s.players[0].position).toBe(result === 'advance_1' ? 2 : 3);
   expect(s.gamePhase).toBe('turn_end'); expect(s.mysteryRollState).toBeNull();
 });
-test('bonus landing at a fork preserves route selection for the next roll', () => {
-  mystery(14, 'advance_2'); event({ type: 'APPLY' }); completeMotion();
-  expect(s.players[0].position).toBe(16); expect(s.gamePhase).toBe('turn_end');
-  s = { ...s, gamePhase: 'ready_to_roll' }; correctMove(1);
-  expect(s.gamePhase).toBe('awaiting_fork_choice'); event({ type: 'BRANCH', choice: 'shortcut' }); completeMotion();
-  expect(s.players[0].position).toBe(30);
+test('bonus reaching entry exactly or passing it cannot activate a dice-only shortcut', () => {
+  mystery(14, 'advance_2'); event({ type: 'APPLY' });
+  event({ type: 'MOTION_DONE' }); event({ type: 'MOTION_DONE' });
+  expect(s.gamePhase).toBe('turn_end'); expect(s.players[0].currentTileId).toBe('tile_16');
+  const landed = s; event({ type: 'LAND' }); event({ type: 'BRANCH', choice: 'shortcut' }); expect(s).toBe(landed);
+  expect(s.forkChoiceState).toBeNull();
+  s = { ...s, gamePhase: 'ready_to_roll' };
+  mystery(1, 'advance_2'); at(3); event({ type: 'APPLY' }); completeMotion();
+  expect(s.players[0].currentTileId).toBe('tile_4_bonus'); expect(s.gamePhase).toBe('turn_end');
+  expect(s.forkChoiceState).toBeNull();
 });
 test.each(['retreat_1', 'retreat_2'] as const)('%s backtracks visited route after shortcut', result => {
-  mystery(15, result, { pathHistory: ['tile_0', 'tile_4', 'tile_11', 'tile_12', 'tile_13', 'tile_14', 'tile_15'] }); event({ type: 'APPLY' }); completeMotion();
-  expect(s.players[0].position).toBe(result === 'retreat_1' ? 14 : 13); expect(s.gamePhase).toBe('turn_end');
+  mystery(15, result, { pathHistory: ['tile_0', 'tile_4', 'tile_8_mid', 'tile_9', 'tile_10', 'tile_11', 'tile_12', 'tile_13', 'tile_14', 'tile_15'] }); event({ type: 'APPLY' }); completeMotion();
+  expect(s.players[0].currentTileId).toBe(result === 'retreat_1' ? 'tile_14' : 'tile_13'); expect(s.gamePhase).toBe('turn_end');
+});
+test('retreat to an entrance does not activate a forward shortcut or chain another effect', () => {
+  mystery(5, 'retreat_2'); event({ type: 'APPLY' }); completeMotion();
+  expect(s.players[0].currentTileId).toBe('tile_4');
+  expect(s.gamePhase).toBe('turn_end'); expect(s.forkChoiceState).toBeNull();
+});
+test('duplicate and paused shortcut choices cannot traverse the shortcut twice', () => {
+  correctMove(4); for (let i = 0; i < 4; i++) event({ type: 'MOTION_DONE' });
+  event({ type: 'LAND' });
+  expect(s.gamePhase).toBe('awaiting_fork_choice');
+  s = raceReducer(s, { type: 'PAUSE', paused: true }); const paused = s;
+  event({ type: 'BRANCH', choice: 'shortcut' }); expect(s).toBe(paused);
+  s = raceReducer(s, { type: 'PAUSE', paused: false }); const id = s.actionId;
+  event({ type: 'BRANCH', choice: 'shortcut' }); const travelling = s;
+  s = raceReducer(s, { type: 'BRANCH', id, choice: 'shortcut' }); expect(s).toBe(travelling);
+  event({ type: 'BRANCH', choice: 'shortcut' }); expect(s).toBe(travelling);
+  completeMotion(); expect(s.players[0].currentTileId).toBe('tile_8_mid');
+});
+
+test.each(SHORTCUTS)('$id: entry position or stale landing alone cannot open a shortcut', shortcut => {
+  at(shortcut.forkTileId);
+  s = { ...s, gamePhase: 'evaluating_tile', answerCorrect: true };
+  event({ type: 'LAND' });
+  expect(s.gamePhase).toBe('turn_end'); expect(s.forkChoiceState).toBeNull();
+  for (const landing of [
+    { tileId: shortcut.mainNextId, playerIndex: 0, turnId: s.turnId },
+    { tileId: shortcut.forkTileId, playerIndex: 1, turnId: s.turnId },
+    { tileId: shortcut.forkTileId, playerIndex: 0, turnId: s.turnId - 1 },
+  ]) {
+    s = { ...s, gamePhase: 'evaluating_tile', diceLanding: landing };
+    event({ type: 'LAND' });
+    expect(s.gamePhase).toBe('turn_end'); expect(s.forkChoiceState).toBeNull();
+  }
+});
+
+test.each(SHORTCUTS)('$id: reward/penalty steps cannot activate or preserve a landing, even at the entry', shortcut => {
+  const route = Object.values(BOARD_TILES).sort((a, b) => a.order - b.order);
+  const forkOrder = getTileOrder(shortcut.forkTileId);
+  for (const [result, startOrder] of [
+    ['advance_1', forkOrder - 1], ['advance_2', forkOrder - 1],
+    ['retreat_1', forkOrder + 1], ['retreat_2', forkOrder + 1],
+  ] as const) {
+    mystery(result.startsWith('advance') ? 1 : 5, result);
+    at(route[startOrder].id);
+    event({ type: 'APPLY' });
+    let visitedEntry = false;
+    while (s.motion) {
+      if (s.players[0].currentTileId === shortcut.forkTileId) visitedEntry = true;
+      const moving = s; event({ type: 'LAND' }); event({ type: 'BRANCH', choice: 'shortcut' });
+      expect(s).toBe(moving); expect(s.diceLanding).toBeNull();
+      event({ type: 'MOTION_DONE' });
+    }
+    expect(visitedEntry).toBe(true); expect(s.gamePhase).toBe('turn_end');
+    expect(s.forkChoiceState).toBeNull(); expect(s.diceLanding).toBeNull();
+  }
+});
+
+test('swapped bonus resolves at tile_28; former bonus tile_29 now resolves as normal', () => {
+  at(27); correctMove(1); completeMotion(); event({ type: 'LAND', result: 'shield' });
+  expect(s.gamePhase).toBe('rolling_mystery'); expect(s.mysteryRollState?.tileId).toBe('tile_28');
+  s = { ...s, gamePhase: 'ready_to_roll' }; at(28); correctMove(1); completeMotion(); event({ type: 'LAND' });
+  expect(s.players[0].currentTileId).toBe('tile_29'); expect(s.gamePhase).toBe('turn_end');
+  expect(s.mysteryRollState).toBeNull();
 });
 test('shield blocks and is consumed once; cleanse can be saved or consumed', () => {
   mystery(15, 'retreat_2', { hasShield: true, cleanseCount: 1 }); event({ type: 'APPLY' });
-  expect(s.players[0].hasShield).toBe(false); expect(s.players[0].cleanseCount).toBe(1); expect(s.players[0].position).toBe(15);
+  expect(s.players[0].hasShield).toBe(false); expect(s.players[0].cleanseCount).toBe(1); expect(s.players[0].currentTileId).toBe('tile_15');
   mystery(15, 'retreat_2', { cleanseCount: 1 }); event({ type: 'APPLY', cleanse: true });
-  expect(s.players[0].cleanseCount).toBe(0); expect(s.players[0].position).toBe(15);
+  expect(s.players[0].cleanseCount).toBe(0); expect(s.players[0].currentTileId).toBe('tile_15');
   mystery(15, 'retreat_1', { cleanseCount: 1 }); event({ type: 'APPLY' }); completeMotion();
-  expect(s.players[0].cleanseCount).toBe(1); expect(s.players[0].position).toBe(14);
+  expect(s.players[0].cleanseCount).toBe(1); expect(s.players[0].currentTileId).toBe('tile_14');
 });
 test.each(['shield', 'cleanse'] as const)('inventory %s capped at one', result => {
-  mystery(3, result, { hasShield: true, cleanseCount: 1 }); event({ type: 'APPLY' });
+  mystery('tile_4_bonus', result, { hasShield: true, cleanseCount: 1 }); event({ type: 'APPLY' });
   expect(s.players[0].hasShield).toBe(true); expect(s.players[0].cleanseCount).toBe(1);
 });
 test('skip flag clears precisely on next scheduled turn', () => {
@@ -132,8 +235,8 @@ test('reset is permitted on early penalty and rejected from tile 11 onward', () 
   event({ type: 'LAND', result: 'reset_start' }); expect(s).toBe(before);
 });
 test('only final animation completion declares winner and all further actions are blocked', () => {
-  at(48); correctMove(6); expect(s.gamePhase).toBe('moving'); expect(s.winner).toBeNull();
-  event({ type: 'MOTION_DONE' }); expect(s.gamePhase).toBe('finished'); expect(s.winner?.position).toBe(49);
+  at(47); correctMove(6); expect(s.gamePhase).toBe('moving'); expect(s.winner).toBeNull();
+  event({ type: 'MOTION_DONE' }); expect(s.gamePhase).toBe('finished'); expect(s.winner?.currentTileId).toBe('tile_49');
   const finished = s; event({ type: 'ROLL', value: 1 }); event({ type: 'NEXT' }); expect(s).toBe(finished);
 });
 test('restart invalidates callbacks from previous session', () => {

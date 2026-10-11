@@ -13,6 +13,29 @@ import {
 import { Player } from '../types/index';
 import { BOARD_TILES, isTileInFirstTen, START_TILE_ID, FINISH_TILE_ID } from '../data/boardConfig';
 
+// Midpoints of a uniform grid verify actual weighted selection, without flaky
+// random-frequency assertions or merely copying configuration into expectations.
+test('weighted bonus selection reduces both inventory rewards moderately', () => {
+  const counts: Record<string, number> = {};
+  for (let i = 0; i < 10000; i++) {
+    const result = rollMysteryBonus(undefined, () => (i + 0.5) / 10000);
+    counts[result] = (counts[result] ?? 0) + 1;
+  }
+  expect(counts).toEqual({ advance_1: 3200, advance_2: 3200, shield: 1800, cleanse: 1800 });
+});
+
+test('reset weight rises slightly early and remains zero at every actual tile from 11 onward', () => {
+  const counts: Record<string, number> = {};
+  for (let i = 0; i < 10000; i++) {
+    const result = rollMysteryPenalty('tile_5', undefined, () => (i + 0.5) / 10000);
+    counts[result] = (counts[result] ?? 0) + 1;
+  }
+  expect(counts).toEqual({ retreat_1: 2400, retreat_2: 2300, skip_turn: 2300, reset_start: 3000 });
+  for (const tile of Object.values(BOARD_TILES).filter(t => t.order >= 11))
+    for (let i = 0; i < 100; i++)
+      expect(rollMysteryPenalty(tile.id, undefined, () => (i + 0.5) / 100)).not.toBe('reset_start');
+});
+
 describe('Đua Về Đích - New Rules & Graph Engine Tests', () => {
   const createMockPlayer = (overrides: Partial<Player> = {}): Player => ({
     id: 'p1',
@@ -51,15 +74,18 @@ describe('Đua Về Đích - New Rules & Graph Engine Tests', () => {
   });
 
   describe('2. Board Map Structure & First 10 Tiles Definition', () => {
-    it('contains Start (0), Finish (49), and properly defined nodes', () => {
+    it('contains the stable Start and Finish IDs and properly defined nodes', () => {
       expect(BOARD_TILES[START_TILE_ID].type).toBe('start');
       expect(BOARD_TILES[FINISH_TILE_ID].type).toBe('finish');
     });
 
-    it('marks tiles 1 through 10 as first ten tiles, and tile 11 onwards as false', () => {
+    it('marks the first ten visible circles, independent of the historical numeric ID', () => {
       expect(isTileInFirstTen('tile_1')).toBe(true);
       expect(isTileInFirstTen('tile_5')).toBe(true);
-      expect(isTileInFirstTen('tile_10')).toBe(true);
+      expect(isTileInFirstTen('tile_8')).toBe(true);
+      expect(isTileInFirstTen('tile_8_mid')).toBe(true);
+      expect(isTileInFirstTen('tile_9')).toBe(false);
+      expect(isTileInFirstTen('tile_10')).toBe(false);
       expect(isTileInFirstTen('tile_11')).toBe(false);
       expect(isTileInFirstTen('tile_15')).toBe(false);
       expect(isTileInFirstTen('tile_26')).toBe(false);
@@ -78,8 +104,8 @@ describe('Đua Về Đích - New Rules & Graph Engine Tests', () => {
       const mainNext = getNextTileId('tile_4', 'main');
       const shortcutNext = getNextTileId('tile_4', 'shortcut');
 
-      expect(mainNext).toBe('tile_5');
-      expect(shortcutNext).toBe('tile_11'); // shortcut merges into tile_11!
+      expect(mainNext).toBe('tile_4_bonus');
+      expect(shortcutNext).toBe('tile_8_mid'); // first blue circle at the painted shortcut exit
     });
 
     it('branches correctly at Fork 2 (tile_16)', () => {
@@ -96,7 +122,7 @@ describe('Đua Về Đích - New Rules & Graph Engine Tests', () => {
   });
 
   describe('4. Strict Enforcement of "Về xuất phát" (Reset to Start) Constraint', () => {
-    it('allows "reset_start" in penalty pool ONLY for first 10 tiles (e.g. tile_5 or tile_10)', () => {
+    it('allows "reset_start" in penalty pool ONLY for first 10 visible circles (e.g. tile_5)', () => {
       const cardsInFirstTen = getPenaltyReelCards('tile_5');
       expect(cardsInFirstTen).toContain('reset_start');
 
@@ -132,10 +158,9 @@ describe('Đua Về Đích - New Rules & Graph Engine Tests', () => {
     });
 
     it('backtracks through shortcuts if the player took a shortcut', () => {
-      // Player went: start -> 1 -> 2 -> 3 -> 4 -> [shortcut] -> 11 -> 12
-      const history = ['tile_0', 'tile_1', 'tile_2', 'tile_3', 'tile_4', 'tile_11', 'tile_12'];
+      const history = ['tile_0', 'tile_1', 'tile_2', 'tile_3', 'tile_4', 'tile_8_mid', 'tile_9'];
       const res = backtrackAlongHistory(history, 2);
-      // Backtracking 2 steps from tile_12 goes back to tile_4 (via tile_11)!
+      // Backtrack from the circle after the shortcut exit to its exact entrance.
       expect(res.destinationTileId).toBe('tile_4');
       expect(res.updatedHistory).toEqual(['tile_0', 'tile_1', 'tile_2', 'tile_3', 'tile_4']);
     });

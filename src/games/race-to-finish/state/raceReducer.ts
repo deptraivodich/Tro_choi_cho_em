@@ -22,9 +22,11 @@ export interface RaceState {
   question: RaceQuestion | null;
   submittedAnswer: string | null;
   answerCorrect: boolean | null;
+  answerFailure: 'incorrect' | 'timeout' | null;
   correctCount: number;
   incorrectCount: number;
   motion: Movement | null;
+  diceLanding: { tileId: string; playerIndex: number; turnId: number } | null;
   mysteryRollState: MysteryRollState | null;
   forkChoiceState: ForkChoiceState | null;
   winner: Player | null;
@@ -33,7 +35,7 @@ export interface RaceState {
 export const initialRaceState: RaceState = {
   actionId: 0, turnId: 0, sessionId: 0, startedAt: 0, gameMode: 'single', players: [], activePlayerIndex: 0,
   gamePhase: 'setup', isPaused: false, currentDiceValue: 3, question: null, submittedAnswer: null,
-  answerCorrect: null, correctCount: 0, incorrectCount: 0, motion: null, mysteryRollState: null,
+  answerCorrect: null, answerFailure: null, correctCount: 0, incorrectCount: 0, motion: null, diceLanding: null, mysteryRollState: null,
   forkChoiceState: null, winner: null, logMessage: 'Tung xúc xắc, giải toán rồi tiến về đích!',
 };
 export type RaceEvent =
@@ -42,6 +44,8 @@ export type RaceEvent =
   | { type: 'ROLL'; id: number; value: number }
   | { type: 'DICE_DONE'; id: number; question: RaceQuestion }
   | { type: 'ANSWER'; id: number; answer: string }
+  | { type: 'QUESTION_TIMEOUT'; id: number }
+  | { type: 'ACKNOWLEDGE_ANSWER'; id: number }
   | { type: 'ANSWER_FEEDBACK_DONE'; id: number }
   | { type: 'MOTION_DONE'; id: number }
   | { type: 'BRANCH'; id: number; choice: 'main' | 'shortcut' }
@@ -51,23 +55,31 @@ export type RaceEvent =
   | { type: 'NEXT'; id: number }
   | { type: 'HANDOVER'; id: number };
 
+// A logical position at an entry is insufficient: require a completed dice
+// landing for this player/turn. Intermediate and effect motion never create it.
+export function hasValidDiceLanding(s: RaceState): boolean {
+  return s.motion === null && s.answerCorrect === true && s.diceLanding !== null &&
+    s.diceLanding.tileId === s.players[s.activePlayerIndex]?.currentTileId &&
+    s.diceLanding.playerIndex === s.activePlayerIndex && s.diceLanding.turnId === s.turnId;
+}
+
+export function canChooseShortcut(s: RaceState): boolean {
+  return s.gamePhase === 'awaiting_fork_choice' && hasValidDiceLanding(s) &&
+    s.forkChoiceState?.remainingSteps === 0 &&
+    s.forkChoiceState.playerIndex === s.activePlayerIndex &&
+    s.forkChoiceState.forkTileId === s.diceLanding?.tileId && isForkTile(s.forkChoiceState.forkTileId);
+}
+
 function patchPlayer(s: RaceState, patch: Partial<Player>): RaceState {
   return { ...s, players: s.players.map((p, i) => i === s.activePlayerIndex ? { ...p, ...patch } : p) };
 }
 function endTurn(s: RaceState, message = s.logMessage): RaceState {
   return { ...patchPlayer(s, { currentPose: 'idle_1' }), gamePhase: 'turn_end', motion: null,
-    mysteryRollState: null, forkChoiceState: null, logMessage: message };
+    diceLanding: null, mysteryRollState: null, forkChoiceState: null, logMessage: message };
 }
 // The logical position changes only here. Visual interpolation never writes a tile position.
 function nextStep(s: RaceState, motion: Movement, branch?: 'main' | 'shortcut'): RaceState {
   const player = s.players[s.activePlayerIndex];
-  if (motion.kind === 'forward' && isForkTile(player.currentTileId) && !branch) {
-    const tile = getTile(player.currentTileId);
-    return { ...s, gamePhase: 'awaiting_fork_choice', motion, forkChoiceState: {
-      forkTileId: tile.id, playerIndex: s.activePlayerIndex, remainingSteps: motion.remaining,
-      mainNextId: tile.nextTileIds.main!, shortcutNextId: tile.nextTileIds.shortcut!,
-    }, logMessage: `${player.name} tới ngã rẽ! Hãy chọn đường đi.` };
-  }
   let tileId: string, history: string[];
   if (motion.kind === 'reset') { tileId = START_TILE_ID; history = [START_TILE_ID]; }
   else if (motion.kind === 'backward') {
@@ -79,7 +91,7 @@ function nextStep(s: RaceState, motion: Movement, branch?: 'main' | 'shortcut'):
   }
   return { ...patchPlayer(s, { currentTileId: tileId, position: getTileOrder(tileId), pathHistory: history,
     currentPose: motion.kind === 'forward' ? (motion.remaining % 2 ? 'walk_1' : 'walk_2') : 'penalty' }),
-    gamePhase: motion.resolveTile ? 'moving' : 'applying_effect', forkChoiceState: null,
+    gamePhase: motion.resolveTile ? 'moving' : 'applying_effect', forkChoiceState: null, diceLanding: null,
     motion: { ...motion, remaining: motion.remaining - 1 } };
 }
 
@@ -89,8 +101,8 @@ function transition(s: RaceState, event: Exclude<RaceEvent, { type: 'START' } | 
   switch (event.type) {
     case 'ROLL':
       if (s.gamePhase !== 'ready_to_roll' || !Number.isInteger(event.value) || event.value < 1 || event.value > 6) return s;
-      return { ...s, gamePhase: 'rolling', currentDiceValue: event.value, question: null,
-        answerCorrect: null, submittedAnswer: null, logMessage: `${player.name} đang tung xúc xắc...` };
+      return { ...s, gamePhase: 'rolling', currentDiceValue: event.value, question: null, diceLanding: null,
+        answerCorrect: null, answerFailure: null, submittedAnswer: null, logMessage: `${player.name} đang tung xúc xắc...` };
     case 'DICE_DONE':
       if (s.gamePhase !== 'rolling') return s;
       return { ...s, gamePhase: 'showing_question', question: event.question,
@@ -99,16 +111,29 @@ function transition(s: RaceState, event: Exclude<RaceEvent, { type: 'START' } | 
       if (s.gamePhase !== 'showing_question' || !s.question) return s;
       const correct = gradeAnswer(s.question, event.answer);
       return { ...s, gamePhase: 'evaluating_answer', submittedAnswer: event.answer, answerCorrect: correct,
+        answerFailure: correct ? null : 'incorrect',
         correctCount: s.correctCount + Number(correct), incorrectCount: s.incorrectCount + Number(!correct),
         logMessage: correct ? `${player.name} trả lời đúng!` : `${player.name} trả lời chưa đúng, đứng nguyên vị trí.` };
     }
+    case 'QUESTION_TIMEOUT':
+      if (s.gamePhase !== 'showing_question' || !s.question) return s;
+      return { ...s, gamePhase: 'evaluating_answer', submittedAnswer: '', answerCorrect: false,
+        answerFailure: 'timeout', incorrectCount: s.incorrectCount + 1,
+        logMessage: `${player.name} hết thời gian trả lời, đứng nguyên vị trí.` };
+    case 'ACKNOWLEDGE_ANSWER':
+      if (s.gamePhase !== 'evaluating_answer' || s.answerCorrect !== false || player.isBot) return s;
+      return endTurn({ ...s, question: null });
     case 'ANSWER_FEEDBACK_DONE':
-      if (s.gamePhase !== 'evaluating_answer') return s;
+      if (s.gamePhase !== 'evaluating_answer' || (!s.answerCorrect && !player.isBot)) return s;
       return s.answerCorrect ? nextStep({ ...s, question: null }, { remaining: s.currentDiceValue, kind: 'forward', resolveTile: true })
         : endTurn({ ...s, question: null });
     case 'BRANCH':
-      if (s.gamePhase !== 'awaiting_fork_choice' || !s.motion) return s;
-      return nextStep(s, s.motion, event.choice);
+      if (!canChooseShortcut(s)) return s;
+      // All rolled steps have already finished. A shortcut is one extra traverse,
+      // not a branch consuming the remaining dice steps during a pass-through.
+      return event.choice === 'shortcut'
+        ? nextStep(s, { kind: 'forward', remaining: 1, resolveTile: false }, 'shortcut')
+        : endTurn(s, `${player.name} chọn ở lại đường chính.`);
     case 'MOTION_DONE': {
       if (!['moving', 'applying_effect'].includes(s.gamePhase) || !s.motion) return s;
       if (player.currentTileId === FINISH_TILE_ID) {
@@ -118,11 +143,21 @@ function transition(s: RaceState, event: Exclude<RaceEvent, { type: 'START' } | 
       }
       if (s.motion.remaining > 0) return nextStep(s, s.motion);
       const landed = patchPlayer(s, { currentPose: 'idle_1' });
-      return s.motion.resolveTile ? { ...landed, gamePhase: 'evaluating_tile', motion: null } : endTurn(landed);
+      return s.motion.resolveTile ? { ...landed, gamePhase: 'evaluating_tile', motion: null,
+        diceLanding: { tileId: player.currentTileId, playerIndex: s.activePlayerIndex, turnId: s.turnId } } : endTurn(landed);
     }
     case 'LAND': {
-      if (s.gamePhase !== 'evaluating_tile') return s;
+      if (s.gamePhase !== 'evaluating_tile' || s.motion) return s;
       const tile = getTile(player.currentTileId);
+      // Only completed dice movement enters this phase. Bonus/penalty movement
+      // ends its turn directly, and intermediate animation steps never resolve LAND.
+      if (isForkTile(tile.id)) {
+        if (!hasValidDiceLanding(s)) return endTurn(s);
+        return { ...s, gamePhase: 'awaiting_fork_choice', forkChoiceState: {
+          forkTileId: tile.id, playerIndex: s.activePlayerIndex, remainingSteps: 0,
+          mainNextId: tile.nextTileIds.main!, shortcutNextId: tile.nextTileIds.shortcut!,
+        }, logMessage: `${player.name} dừng đúng lối vào đường tắt! Hãy chọn đường đi.` };
+      }
       if (tile.type !== 'bonus' && tile.type !== 'penalty') return endTurn(s, `${player.name} dừng chân an toàn.`);
       const validResults = tile.type === 'bonus' ? ['advance_1', 'advance_2', 'shield', 'cleanse']
         : isTileInFirstTen(tile.id) ? ['retreat_1', 'retreat_2', 'skip_turn', 'reset_start'] : ['retreat_1', 'retreat_2', 'skip_turn'];
@@ -162,7 +197,7 @@ function transition(s: RaceState, event: Exclude<RaceEvent, { type: 'START' } | 
       const nextIndex = (s.activePlayerIndex + 1) % s.players.length;
       const next = s.players[nextIndex];
       const base = { ...s, activePlayerIndex: nextIndex, turnId: s.turnId + 1, question: null,
-        submittedAnswer: null, answerCorrect: null, mysteryRollState: null, forkChoiceState: null };
+        submittedAnswer: null, answerCorrect: null, answerFailure: null, diceLanding: null, mysteryRollState: null, forkChoiceState: null };
       if (next.skipNextTurn) return endTurn(patchPlayer(base, { skipNextTurn: false }), `${next.name} nghỉ lượt này do hình phạt.`);
       return { ...base, gamePhase: s.gameMode === 'local_multiplayer' && !next.isBot ? 'turn_handover' : 'ready_to_roll',
         logMessage: `Đến lượt ${next.name}.` };
