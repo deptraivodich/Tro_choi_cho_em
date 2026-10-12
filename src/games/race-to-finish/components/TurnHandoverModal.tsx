@@ -1,7 +1,8 @@
+import { RaceModal } from './RaceModal';
 import React from 'react';
-import { View, Text, Modal, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Player, CHARACTERS_META } from '../types/index';
-import { RACE_ASSETS } from '../assets/index';
+import { CharacterAvatar } from './CharacterAvatar';
 import { soundManager } from '../../../shared/audio/audioController';
 
 interface TurnHandoverModalProps {
@@ -16,7 +17,6 @@ export const TurnHandoverModal: React.FC<TurnHandoverModalProps> = ({
   onReady,
 }) => {
   const meta = CHARACTERS_META[nextPlayer.character];
-  const avatarSource = RACE_ASSETS.characters[nextPlayer.character].avatar;
 
   const handlePress = () => {
     soundManager.playTap();
@@ -24,13 +24,13 @@ export const TurnHandoverModal: React.FC<TurnHandoverModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} animationType="fade" transparent>
+    <RaceModal visible={visible} animationType="fade" transparent>
       <View style={styles.overlay}>
         <View style={styles.card}>
           <Text style={styles.smallHeader}>👥 CHUYỂN GIAO THIẾT BỊ</Text>
 
           <View style={[styles.avatarCircle, { borderColor: meta.borderColor, backgroundColor: meta.bgTint }]}>
-            <Image source={avatarSource} style={styles.avatarImg} resizeMode="contain" />
+            <CharacterAvatar character={nextPlayer.character} size={46} style={styles.avatarImg} />
           </View>
 
           <Text style={styles.turnTitle}>ĐẾN LƯỢT CỦA</Text>
@@ -45,7 +45,7 @@ export const TurnHandoverModal: React.FC<TurnHandoverModalProps> = ({
           </TouchableOpacity>
         </View>
       </View>
-    </Modal>
+    </RaceModal>
   );
 };
 
@@ -55,12 +55,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+    padding: 10,
   },
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 28,
-    padding: 24,
+    padding: 10,
     width: '100%',
     maxWidth: 380,
     alignItems: 'center',
@@ -77,11 +77,11 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#9CA3AF',
     letterSpacing: 1,
-    marginBottom: 16,
+    marginBottom: 6,
   },
   avatarCircle: {
-    width: 88,
-    height: 88,
+    width: 54,
+    height: 54,
     borderRadius: 44,
     borderWidth: 4,
     justifyContent: 'center',
@@ -89,8 +89,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   avatarImg: {
-    width: 76,
-    height: 76,
+    width: 46,
+    height: 46,
     borderRadius: 38,
   },
   turnTitle: {
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     color: '#4B5563',
     textAlign: 'center',
     lineHeight: 18,
-    marginBottom: 20,
+    marginBottom: 8,
   },
   boldText: {
     fontWeight: '800',

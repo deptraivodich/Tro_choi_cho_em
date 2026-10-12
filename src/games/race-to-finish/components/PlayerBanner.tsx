@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { Player, CHARACTERS_META } from '../types/index';
 import { RACE_ASSETS } from '../assets/index';
+import { CharacterAvatar } from './CharacterAvatar';
 import { FINISH_TILE_ID, getTileOrder } from '../data/boardConfig';
 
 interface PlayerBannerProps {
@@ -16,7 +17,6 @@ export const PlayerBanner: React.FC<PlayerBannerProps> = ({ players, activePlaye
         {players.map((p, idx) => {
           const isActive = idx === activePlayerIndex;
           const meta = CHARACTERS_META[p.character];
-          const avatarSource = RACE_ASSETS.characters[p.character].avatar;
 
           return (
             <View
@@ -33,7 +33,7 @@ export const PlayerBanner: React.FC<PlayerBannerProps> = ({ players, activePlaye
                   { borderColor: meta.borderColor, backgroundColor: meta.bgTint },
                 ]}
               >
-                <Image source={avatarSource} style={styles.avatarImage} resizeMode="contain" />
+                <CharacterAvatar character={p.character} size={38} style={styles.avatarImage} />
 
                 {/* Status Badges */}
                 {p.hasShield && (

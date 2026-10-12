@@ -1,7 +1,10 @@
+import { RaceModal } from './RaceModal';
 import React from 'react';
-import { View, Text, Modal, TouchableOpacity, Image, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet, ScrollView } from 'react-native';
 import { Player, CHARACTERS_META } from '../types/index';
 import { RACE_ASSETS } from '../assets/index';
+import { CharacterAvatar } from './CharacterAvatar';
+import { TokenSprite } from './TokenSprite';
 import { soundManager } from '../../../shared/audio/audioController';
 import { FINISH_TILE_ID, getTileOrder } from '../data/boardConfig';
 
@@ -23,13 +26,12 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
   if (!winner) return null;
 
   const meta = CHARACTERS_META[winner.character];
-  const victorySprite = RACE_ASSETS.characters[winner.character].victory;
 
   // Sorted players by position descending
   const sortedPlayers = [...allPlayers].sort((a, b) => b.position - a.position);
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <RaceModal visible={visible} animationType="slide" transparent>
       <View style={styles.overlay}>
         <ScrollView style={styles.card} contentContainerStyle={{ alignItems: 'center' }}>
           {/* Trophy & Confetti Header */}
@@ -42,7 +44,7 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
 
           {/* Winner Hero Sprite in Victory Pose */}
           <View style={styles.heroSpriteContainer}>
-            <Image source={victorySprite} style={styles.heroSprite} resizeMode="contain" />
+            <TokenSprite character={winner.character} pose="victory" size={120} />
           </View>
 
           <Text style={styles.victorySubtitle}>
@@ -53,12 +55,11 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
           <View style={styles.leaderboardBox}>
             <Text style={styles.lbHeader}>BẢNG XẾP HẠNG CUỐI CÙNG</Text>
             {sortedPlayers.map((p, idx) => {
-              const pAvatar = RACE_ASSETS.characters[p.character].avatar;
 
               return (
                 <View key={`rank-${p.id}`} style={styles.lbRow}>
                   <Text style={styles.rankNum}>#{idx + 1}</Text>
-                  <Image source={pAvatar} style={styles.lbAvatar} />
+                  <CharacterAvatar character={p.character} size={26} style={styles.lbAvatar} />
                   <Text style={styles.lbName} numberOfLines={1}>
                     {p.name}
                   </Text>
@@ -88,7 +89,7 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
           </View>
         </ScrollView>
       </View>
-    </Modal>
+    </RaceModal>
   );
 };
 

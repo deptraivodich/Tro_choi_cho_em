@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Modal, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { RaceModal } from './RaceModal';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, cancelAnimation, runOnJS } from 'react-native-reanimated';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { RaceQuestion, answerText } from '../logic/questions';
 import { Player } from '../types/index';
 import { QUESTION_TIME_LIMIT_MS } from '../state/turnTiming';
@@ -9,9 +11,27 @@ interface Props {
   correct: boolean | null; paused: boolean; onAnswer: (input: string) => void;
   failure: 'incorrect' | 'timeout' | null;
   onAcknowledge: () => void; getTimeRemaining: () => number;
+  closing: boolean; actionId: number; onDismissed: (id: number) => void;
 }
 export function MathQuestionModal({ question, player, dice, submittedAnswer, correct, failure, paused, onAnswer,
-  onAcknowledge, getTimeRemaining }: Props) {
+  onAcknowledge, getTimeRemaining, closing, actionId, onDismissed }: Props) {
+  const opacity = useSharedValue(1);
+  const latest = useRef({ closing, paused, actionId, onDismissed });
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  useLayoutEffect(() => { latest.current = { closing, paused, actionId, onDismissed }; }, [closing, paused, actionId, onDismissed]);
+  const finish = (id: number) => {
+    const current = latest.current;
+    if (mounted.current && current.closing && !current.paused && current.actionId === id) current.onDismissed(id);
+  };
+  useEffect(() => {
+    cancelAnimation(opacity);
+    if (closing && !paused) opacity.set(withTiming(0, { duration: 180 * opacity.value }, completed => {
+      if (completed) runOnJS(finish)(actionId);
+    }));
+    return () => cancelAnimation(opacity);
+  }, [closing, paused, actionId, opacity]);
+  const fade = useAnimatedStyle(() => ({ opacity: opacity.value }));
   const [input, setInput] = useState('');
   const [remaining, setRemaining] = useState(QUESTION_TIME_LIMIT_MS);
   useEffect(() => {
@@ -26,7 +46,8 @@ export function MathQuestionModal({ question, player, dice, submittedAnswer, cor
   const locked = correct !== null || player.isBot || paused;
   const submit = () => { if (!locked && input.trim()) onAnswer(input); };
   return (
-    <Modal transparent visible animationType="fade" onRequestClose={() => {}}>
+    <RaceModal transparent visible animationType="fade" onRequestClose={() => {}}>
+      <Animated.View testID="math-feedback-layer" style={[StyleSheet.absoluteFill, fade]}>
       <KeyboardAvoidingView style={styles.backdrop} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.card}>
         <ScrollView keyboardShouldPersistTaps="handled" style={styles.scrollContent} contentContainerStyle={styles.content}>
@@ -68,18 +89,19 @@ export function MathQuestionModal({ question, player, dice, submittedAnswer, cor
           </TouchableOpacity>}
         </View>
       </KeyboardAvoidingView>
-    </Modal>
+      </Animated.View>
+    </RaceModal>
   );
 }
 const styles = StyleSheet.create({
   backdrop: { flex: 1, padding: 16, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.75)' },
-  card: { width: '100%', maxWidth: 520, maxHeight: '90%', flexGrow: 0, backgroundColor: '#FFFBEB', borderRadius: 24, borderWidth: 3, borderColor: '#F59E0B' },
+  card: { width: '100%', maxWidth: 680, maxHeight: '94%', flexGrow: 0, backgroundColor: '#FFFBEB', borderRadius: 24, borderWidth: 3, borderColor: '#F59E0B' },
   scrollContent: { flexGrow: 0, flexShrink: 1 }, acknowledge: { marginHorizontal: 20, marginBottom: 16 },
-  content: { padding: 20, gap: 14 }, heading: { fontSize: 23, fontWeight: '900', color: '#065F46', textAlign: 'center' },
-  caption: { fontSize: 14, color: '#92400E', textAlign: 'center' }, prompt: { fontSize: 23, lineHeight: 34, fontWeight: '700', color: '#1F2937' },
+  content: { padding: 12, gap: 8 }, heading: { fontSize: 23, fontWeight: '900', color: '#065F46', textAlign: 'center' },
+  caption: { fontSize: 14, color: '#92400E', textAlign: 'center' }, prompt: { fontSize: 21, lineHeight: 28, fontWeight: '700', color: '#1F2937' },
   hint: { fontSize: 15, color: '#4B5563' }, input: { minHeight: 54, fontSize: 23, borderWidth: 2, borderColor: '#D97706', borderRadius: 12, padding: 12, backgroundColor: '#fff' },
   submit: { minHeight: 52, justifyContent: 'center', alignItems: 'center', backgroundColor: '#059669', borderRadius: 12 }, disabled: { opacity: 0.45 },
-  submitText: { color: '#fff', fontWeight: '900', fontSize: 18 }, choices: { flexDirection: 'row', gap: 12, justifyContent: 'center' },
+  submitText: { color: '#fff', fontWeight: '900', fontSize: 18 }, choices: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
   choice: { minWidth: 64, minHeight: 56, backgroundColor: '#D1FAE5', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   choiceText: { fontSize: 28, fontWeight: '800', color: '#065F46' }, feedbackBox: { padding: 12, borderRadius: 12 },
   correct: { backgroundColor: '#D1FAE5' }, incorrect: { backgroundColor: '#FEE2E2' }, feedback: { fontWeight: '800', fontSize: 18, color: '#064E3B' },

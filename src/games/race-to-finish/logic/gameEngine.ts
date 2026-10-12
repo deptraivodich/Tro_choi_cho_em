@@ -147,7 +147,7 @@ export function backtrackAlongHistory(
 }
 
 /**
- * Get the next tile along the path given a branch selection.
+ * Get the next tile along the main route or an automatic shortcut traversal.
  */
 export function getNextTileId(
   currentTileId: string,
@@ -163,19 +163,11 @@ export function getNextTileId(
 }
 
 /**
- * Check if a tile has a branching fork that requires player route decision.
+ * Check whether a tile is a configured automatic shortcut entrance.
  */
 export function isForkTile(tileId: string): boolean {
   const tile = getTile(tileId);
   return Boolean(tile && tile.type === 'fork' && tile.nextTileIds.shortcut);
-}
-
-/**
- * Bot AI decision policy for choosing path at a fork.
- * Always prefers the shortcut because it significantly reduces distance to finish.
- */
-export function decideBotForkChoice(): 'main' | 'shortcut' {
-  return 'shortcut';
 }
 
 /**

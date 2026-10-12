@@ -2,18 +2,20 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  Modal,
   TouchableOpacity,
   TextInput,
-  Image,
   StyleSheet,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
-import { GameMode, Player, CharacterId, CHARACTERS_META } from '../types/index';
-import { RACE_ASSETS } from '../assets/index';
+import { GameMode, Player, CharacterId } from '../types/index';
+import { CharacterAvatar } from './CharacterAvatar';
+import { defaultSetupName } from '../logic/playerIdentity';
 import { soundManager } from '../../../shared/audio/audioController';
 
 interface SetupModalProps {
+  assetsReady?: boolean;
   visible: boolean;
   onStartGame: (mode: GameMode, players: Player[]) => void;
   onExit: () => void;
@@ -21,17 +23,12 @@ interface SetupModalProps {
 
 const ALL_CHARACTERS: CharacterId[] = ['fox', 'penguin', 'bunny', 'turtle'];
 
-export const SetupModal: React.FC<SetupModalProps> = ({ visible, onStartGame, onExit }) => {
+export const SetupModal: React.FC<SetupModalProps> = ({ visible, onStartGame, onExit, assetsReady = true }) => {
   const [mode, setMode] = useState<GameMode>('single');
   const [numPlayers, setNumPlayers] = useState<number>(4);
 
   // Initial player names & characters
-  const [playerNames, setPlayerNames] = useState<string[]>([
-    'Em',
-    'Cánh Cụt Máy',
-    'Thỏ Tím Máy',
-    'Rùa Con Máy',
-  ]);
+  const [playerNames, setPlayerNames] = useState<(string | null)[]>([null, null, null, null]);
 
   const [playerChars, setPlayerChars] = useState<CharacterId[]>([
     'fox',
@@ -43,21 +40,7 @@ export const SetupModal: React.FC<SetupModalProps> = ({ visible, onStartGame, on
   const handleModeChange = (newMode: GameMode) => {
     soundManager.playTap();
     setMode(newMode);
-    if (newMode === 'single') {
-      setPlayerNames([
-        'Em',
-        'Cánh Cụt Máy',
-        'Thỏ Tím Máy',
-        'Rùa Con Máy',
-      ]);
-    } else {
-      setPlayerNames([
-        'Người chơi 1',
-        'Người chơi 2',
-        'Người chơi 3',
-        'Người chơi 4',
-      ]);
-    }
+    setPlayerNames([null, null, null, null]);
   };
 
   const handleCharSelect = (playerIdx: number, charId: CharacterId) => {
@@ -81,13 +64,14 @@ export const SetupModal: React.FC<SetupModalProps> = ({ visible, onStartGame, on
   };
 
   const handleStart = () => {
+    if (!assetsReady) return;
     soundManager.playVictory();
     const activePlayers: Player[] = [];
     for (let i = 0; i < numPlayers; i++) {
       const isBot = mode === 'single' && i > 0;
       activePlayers.push({
         id: `p-${i + 1}`,
-        name: playerNames[i] || CHARACTERS_META[playerChars[i]].defaultPlayerName,
+        name: playerNames[i]?.trim() || defaultSetupName(mode, i, playerChars[i]),
         character: playerChars[i],
         isBot,
         currentTileId: 'tile_0',
@@ -103,17 +87,19 @@ export const SetupModal: React.FC<SetupModalProps> = ({ visible, onStartGame, on
     onStartGame(mode, activePlayers);
   };
 
+  if (!visible) return null;
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <KeyboardAvoidingView style={styles.fullscreen} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={styles.modalOverlay}>
         <View style={styles.modalCard}>
           {/* Header */}
           <View style={styles.header}>
-            <Image source={RACE_ASSETS.ui.header_sign} style={styles.headerSign} resizeMode="contain" />
+            <Text style={styles.title}>ĐUA VỀ ĐÍCH</Text>
             <Text style={styles.subtitle}>Giải toán lớp 5 và đua qua khu rừng diệu kỳ</Text>
           </View>
 
-          <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <View style={styles.columns}>
+          <ScrollView style={styles.leftColumn} contentContainerStyle={styles.columnContent} keyboardShouldPersistTaps="handled">
             {/* Mode Selector */}
             <Text style={styles.sectionTitle}>1. Chọn Chế Độ Chơi</Text>
             <View style={styles.modeRow}>
@@ -161,12 +147,13 @@ export const SetupModal: React.FC<SetupModalProps> = ({ visible, onStartGame, on
               ))}
             </View>
 
+          </ScrollView>
+          <ScrollView style={styles.scrollContent} contentContainerStyle={styles.columnContent} keyboardShouldPersistTaps="handled">
             {/* Player details */}
             <Text style={styles.sectionTitle}>3. Nhân Vật & Tên Người Chơi</Text>
             {Array.from({ length: numPlayers }).map((_, idx) => {
               const isBot = mode === 'single' && idx > 0;
               const currentChar = playerChars[idx];
-              const meta = CHARACTERS_META[currentChar];
 
               return (
                 <View key={`player-setup-${idx}`} style={styles.playerSetupCard}>
@@ -175,8 +162,9 @@ export const SetupModal: React.FC<SetupModalProps> = ({ visible, onStartGame, on
                       {isBot ? `🤖 Máy ${idx}` : `👤 Người chơi ${idx + 1}`}
                     </Text>
                     <TextInput
+                      testID={`race-setup-name-${idx}`}
                       style={styles.nameInput}
-                      value={playerNames[idx]}
+                      value={playerNames[idx] ?? defaultSetupName(mode, idx, currentChar)}
                       onChangeText={(t) => handleNameChange(idx, t)}
                       placeholder="Nhập tên..."
                       maxLength={14}
@@ -188,10 +176,10 @@ export const SetupModal: React.FC<SetupModalProps> = ({ visible, onStartGame, on
                     {ALL_CHARACTERS.map((charId) => {
                       const isSelected = currentChar === charId;
                       const isUsedByOther = playerChars.slice(0, numPlayers).includes(charId) && !isSelected;
-                      const avatarSrc = RACE_ASSETS.characters[charId].avatar;
 
                       return (
                         <TouchableOpacity
+                          testID={`race-setup-character-${idx}-${charId}`}
                           key={`char-opt-${idx}-${charId}`}
                           style={[
                             styles.charAvatarBtn,
@@ -199,7 +187,7 @@ export const SetupModal: React.FC<SetupModalProps> = ({ visible, onStartGame, on
                           ]}
                           onPress={() => handleCharSelect(idx, charId)}
                         >
-                          <Image source={avatarSrc} style={styles.charAvatarImg} />
+                          <CharacterAvatar character={charId} size={42} style={styles.charAvatarImg} />
                           {isSelected && <View style={styles.selectedTick}><Text style={styles.tickText}>✓</Text></View>}
                           {isUsedByOther && <View style={styles.swapBadge}><Text style={styles.swapText}>Đổi</Text></View>}
                         </TouchableOpacity>
@@ -216,45 +204,53 @@ export const SetupModal: React.FC<SetupModalProps> = ({ visible, onStartGame, on
               <Text style={styles.ruleItem}>• Tung xúc xắc, giải toán lớp 5: đúng thì đi đủ số ô xúc xắc (1–6), sai thì đứng yên.</Text>
               <Text style={styles.ruleItem}>• <Text style={styles.ruleGreen}>Ô Thưởng (+1, +2, Khiên, Sao Giải Trừ)</Text> giúp tăng tốc và tự chặn phạt.</Text>
               <Text style={styles.ruleItem}>• Ô phạt: lùi 1–2 ô, mất lượt; về xuất phát chỉ có ở 10 ô đầu. Khiên và sao giúp chặn phạt.</Text>
-              <Text style={styles.ruleItem}>• Ai cán đích đầu tiên sẽ giành Cúp Vàng. Tại ngã rẽ, em được chọn đường chính hoặc đường tắt!</Text>
+              <Text style={styles.ruleItem}>• Dừng đúng cửa vào bằng bước xúc xắc cuối cùng: tự động đi đường tắt. Ai cán đích đầu tiên giành Cúp Vàng.</Text>
             </View>
           </ScrollView>
 
+          </View>
           {/* Footer actions */}
           <View style={styles.footer}>
-            <TouchableOpacity style={styles.exitBtn} onPress={onExit}>
+            <TouchableOpacity testID="race-setup-exit" style={styles.exitBtn} onPress={onExit}>
               <Text style={styles.exitBtnText}>‹ Về sảnh</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.startBtn}
+              disabled={!assetsReady}
               onPress={handleStart}
               accessibilityLabel="start-race-button"
               testID="start-race-button"
             >
-              <Text style={styles.startBtnText}>🏁 XUẤT PHÁT ĐUA NGAY</Text>
+              <Text style={styles.startBtnText}>{assetsReady ? '🏁 XUẤT PHÁT ĐUA NGAY' : 'Đang tải bản đồ...'}</Text>
             </TouchableOpacity>
           </View>
         </View>
       </View>
-    </Modal>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
+  fullscreen: { flex: 1 },
+  title: { fontSize: 24, fontWeight: '900', color: '#78350F' },
+  columns: { flex: 1, flexDirection: 'row', minHeight: 0 },
+  leftColumn: { flex: .8, borderRightWidth: 1, borderRightColor: '#FDE68A' },
+  columnContent: { padding: 12 },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
+    padding: 8,
   },
   modalCard: {
     backgroundColor: '#FEF3C7',
     borderRadius: 28,
     width: '100%',
-    maxWidth: 520,
-    maxHeight: '90%',
+    maxWidth: 1100,
+    flex: 1,
+    minHeight: 0,
     borderWidth: 3,
     borderColor: '#D97706',
     overflow: 'hidden',
@@ -262,7 +258,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    paddingTop: 16,
+    paddingTop: 8,
     paddingBottom: 8,
     borderBottomWidth: 1.5,
     borderBottomColor: '#FDE68A',
@@ -279,7 +275,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flex: 1,
-    padding: 16,
+    minHeight: 0,
   },
   sectionTitle: {
     fontSize: 14,
@@ -468,13 +464,15 @@ const styles = StyleSheet.create({
   },
   footer: {
     flexDirection: 'row',
-    padding: 16,
+    padding: 8,
+    flexShrink: 0,
     gap: 12,
     borderTopWidth: 1.5,
     borderTopColor: '#FDE68A',
     backgroundColor: '#FEF3C7',
   },
   exitBtn: {
+    minHeight: 48,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 14,
@@ -489,6 +487,7 @@ const styles = StyleSheet.create({
     color: '#4B5563',
   },
   startBtn: {
+    minHeight: 48,
     flex: 1,
     paddingVertical: 12,
     borderRadius: 14,

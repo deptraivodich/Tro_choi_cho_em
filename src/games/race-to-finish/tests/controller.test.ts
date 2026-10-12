@@ -13,7 +13,11 @@ test('controller rolls once, waits for human math, freezes timers on pause and r
   const controller = new RaceController(() => 0.3); controller.connect(); controller.startGame('single', [player('p1', false), player('p2')]);
   controller.roll(); controller.roll(); expect(jest.getTimerCount()).toBe(1);
   jest.advanceTimersByTime(300); controller.send({ type: 'PAUSE', paused: true });
+  expect(controller.getDiceTimeRemaining()).toBe(450);
+  const playtime = controller.getActivePlaytime();
   jest.advanceTimersByTime(5000); expect(controller.getSnapshot().gamePhase).toBe('rolling');
+  expect(controller.getActivePlaytime()).toBe(playtime);
+  expect(controller.getDiceTimeRemaining()).toBe(450);
   controller.send({ type: 'PAUSE', paused: false }); jest.advanceTimersByTime(449);
   expect(controller.getSnapshot().gamePhase).toBe('rolling'); jest.advanceTimersByTime(1);
   expect(controller.getSnapshot().gamePhase).toBe('showing_question');
@@ -33,6 +37,7 @@ test('bots follow complete turn phases to finish with exactly 4/5 correct per co
     if (s.gamePhase === 'finished') break;
     if (s.motion && ['moving', 'applying_effect'].includes(s.gamePhase)) controller.send({ type: 'MOTION_DONE', id: s.actionId });
     else if (s.gamePhase === 'rolling_mystery') controller.send({ type: 'SPIN_DONE', id: s.actionId });
+    else if (s.gamePhase === 'closing_answer') controller.send({ type: 'ANSWER_FEEDBACK_DISMISSED', id: s.actionId });
     else { expect(jest.getTimerCount()).toBe(1); jest.runOnlyPendingTimers(); }
   }
   expect(controller.getSnapshot().gamePhase).toBe('finished'); expect(controller.getSnapshot().winner?.currentTileId).toBe('tile_49');
@@ -53,21 +58,27 @@ test('disconnect and restart invalidate pending bot actions', () => {
   controller.disconnect();
 });
 
-test('bot landing exactly at entry waits for its choice, respects pause, and traverses only the shortcut', () => {
+test('bot automatically traverses an exact entry, pauses motion, and waits for animation before ending turn', () => {
   const controller = new RaceController(() => 0.55); controller.connect();
   controller.startGame('single', [player('p1'), player('p2')]);
   jest.advanceTimersByTime(4100); // 4 on the dice; the first bot answer is correct.
+  expect(controller.getSnapshot().gamePhase).toBe('closing_answer');
+  controller.send({ type: 'ANSWER_FEEDBACK_DISMISSED', id: controller.getSnapshot().actionId });
   expect(controller.getSnapshot().gamePhase).toBe('moving');
   for (let i = 0; i < 4; i++) controller.send({ type: 'MOTION_DONE', id: controller.getSnapshot().actionId });
   expect(controller.getSnapshot().gamePhase).toBe('evaluating_tile');
   jest.advanceTimersByTime(0);
-  expect(controller.getSnapshot().gamePhase).toBe('awaiting_fork_choice');
-  expect(controller.getSnapshot().players[0].currentTileId).toBe('tile_4');
-  controller.send({ type: 'PAUSE', paused: true }); jest.advanceTimersByTime(5000);
-  expect(controller.getSnapshot().players[0].currentTileId).toBe('tile_4');
-  controller.send({ type: 'PAUSE', paused: false }); jest.advanceTimersByTime(900);
   expect(controller.getSnapshot().gamePhase).toBe('applying_effect');
+  expect(controller.getSnapshot().motion?.kind).toBe('shortcut');
   expect(controller.getSnapshot().players[0].currentTileId).toBe('tile_8_mid');
+  expect(jest.getTimerCount()).toBe(0);
+  controller.send({ type: 'PAUSE', paused: true });
+  const paused = controller.getSnapshot(); jest.advanceTimersByTime(5000);
+  controller.send({ type: 'MOTION_DONE', id: paused.actionId });
+  expect(controller.getSnapshot()).toBe(paused);
+  controller.send({ type: 'PAUSE', paused: false }); jest.advanceTimersByTime(5000);
+  expect(controller.getSnapshot().gamePhase).toBe('applying_effect');
+  expect(controller.getSnapshot().activePlayerIndex).toBe(0);
   controller.send({ type: 'MOTION_DONE', id: controller.getSnapshot().actionId });
   expect(controller.getSnapshot().gamePhase).toBe('turn_end');
   controller.disconnect();
@@ -90,6 +101,47 @@ function humanQuestion() {
   controller.roll(); jest.advanceTimersByTime(750);
   return controller;
 }
+
+test('correct feedback must finish its actual dismissal before any movement; pause and stale callbacks cannot bypass it', () => {
+  const controller = humanQuestion();
+  controller.answer(answerText(controller.getSnapshot().question!));
+  const visible = controller.getSnapshot();
+  controller.send({ type: 'ANSWER_FEEDBACK_DISMISSED', id: visible.actionId });
+  expect(controller.getSnapshot()).toBe(visible);
+  jest.advanceTimersByTime(1100);
+  const closing = controller.getSnapshot();
+  expect(closing.gamePhase).toBe('closing_answer'); expect(closing.question).not.toBeNull();
+  expect(closing.players[0].position).toBe(0); expect(closing.motion).toBeNull();
+  jest.advanceTimersByTime(60000);
+  expect(controller.getSnapshot()).toBe(closing); expect(jest.getTimerCount()).toBe(0);
+  controller.send({ type: 'ANSWER_FEEDBACK_DISMISSED', id: visible.actionId });
+  expect(controller.getSnapshot()).toBe(closing);
+  controller.send({ type: 'PAUSE', paused: true });
+  controller.send({ type: 'ANSWER_FEEDBACK_DISMISSED', id: closing.actionId });
+  expect(controller.getSnapshot().players[0].position).toBe(0);
+  controller.send({ type: 'PAUSE', paused: false });
+  controller.send({ type: 'ANSWER_FEEDBACK_DISMISSED', id: closing.actionId });
+  const moving = controller.getSnapshot();
+  expect(moving.gamePhase).toBe('moving'); expect(moving.question).toBeNull(); expect(moving.players[0].position).toBe(1);
+  controller.send({ type: 'ANSWER_FEEDBACK_DISMISSED', id: closing.actionId });
+  expect(controller.getSnapshot()).toBe(moving); controller.disconnect();
+});
+
+test.each(['incorrect', 'timeout'] as const)('dice 4 with %s never reaches or activates the first shortcut', failure => {
+  const controller = new RaceController(() => 0.55); controller.connect();
+  controller.startGame('local_multiplayer', [player('p1', false), player('p2', false)]);
+  controller.roll(); jest.advanceTimersByTime(750);
+  expect(controller.getSnapshot().currentDiceValue).toBe(4);
+  if (failure === 'timeout') jest.advanceTimersByTime(QUESTION_TIME_LIMIT_MS);
+  else controller.answer('wrong');
+  expect(controller.getSnapshot().answerFailure).toBe(failure);
+  controller.acknowledgeAnswer();
+  expect(controller.getSnapshot().players[0].currentTileId).toBe('tile_0');
+  expect(controller.getSnapshot().motion).toBeNull();
+  expect(controller.getSnapshot().diceLanding).toBeNull();
+  expect(controller.getSnapshot().gamePhase).toBe('turn_end');
+  controller.disconnect();
+});
 test('30-second timeout counts once, keeps explanation indefinitely and waits for human acknowledgement', () => {
   const controller = humanQuestion();
   expect(controller.getQuestionTimeRemaining()).toBe(QUESTION_TIME_LIMIT_MS);
@@ -144,6 +196,7 @@ test('correct answer before deadline cancels timeout, and restart removes old qu
   const controller = humanQuestion(); jest.advanceTimersByTime(29999);
   controller.answer(answerText(controller.getSnapshot().question!));
   expect(controller.getSnapshot().answerCorrect).toBe(true); jest.advanceTimersByTime(1100);
+  controller.send({ type: 'ANSWER_FEEDBACK_DISMISSED', id: controller.getSnapshot().actionId });
   expect(controller.getSnapshot().gamePhase).toBe('moving'); expect(controller.getSnapshot().incorrectCount).toBe(0);
   controller.startGame('single', [player('p1', false), player('p2')]);
   expect(jest.getTimerCount()).toBe(0); jest.advanceTimersByTime(60000);
@@ -156,6 +209,7 @@ test.each([true, false])('human rewards auto-apply once; optional cleanse chosen
   const land = (roll: number, mystery: number) => {
     value = roll; controller.roll(); jest.advanceTimersByTime(750);
     controller.answer(answerText(controller.getSnapshot().question!)); jest.advanceTimersByTime(1100);
+    controller.send({ type: 'ANSWER_FEEDBACK_DISMISSED', id: controller.getSnapshot().actionId });
     while (controller.getSnapshot().motion)
       controller.send({ type: 'MOTION_DONE', id: controller.getSnapshot().actionId });
     value = mystery; jest.advanceTimersByTime(0);
@@ -191,7 +245,7 @@ test.each([true, false])('human rewards auto-apply once; optional cleanse chosen
     expect(controller.getSnapshot().gamePhase).toBe('turn_end');
     expect(controller.getSnapshot().players[0].cleanseCount).toBe(1);
     expect(controller.getSnapshot().players[0].position).toBe(result === 'retreat_1' ? 5 : result === 'retreat_2' ? 4 : 6);
-    expect(controller.getSnapshot().forkChoiceState).toBeNull();
+    expect(controller.getSnapshot().diceLanding).toBeNull();
   }
   controller.disconnect(); expect(jest.getTimerCount()).toBe(0);
 });
