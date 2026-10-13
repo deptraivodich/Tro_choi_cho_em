@@ -68,6 +68,9 @@ test('bot automatically traverses an exact entry, pauses motion, and waits for a
   for (let i = 0; i < 4; i++) controller.send({ type: 'MOTION_DONE', id: controller.getSnapshot().actionId });
   expect(controller.getSnapshot().gamePhase).toBe('evaluating_tile');
   jest.advanceTimersByTime(0);
+  expect(controller.getSnapshot().gamePhase).toBe('shortcut_pause');
+  expect(controller.getSnapshot().players[0].currentTileId).toBe('tile_4');
+  jest.advanceTimersByTime(450);
   expect(controller.getSnapshot().gamePhase).toBe('applying_effect');
   expect(controller.getSnapshot().motion?.kind).toBe('shortcut');
   expect(controller.getSnapshot().players[0].currentTileId).toBe('tile_8_mid');
@@ -242,6 +245,8 @@ test.each([true, false])('human rewards auto-apply once; optional cleanse chosen
     jest.advanceTimersByTime(1);
     while (controller.getSnapshot().motion)
       controller.send({ type: 'MOTION_DONE', id: controller.getSnapshot().actionId });
+    expect(controller.getSnapshot().gamePhase).toBe('evaluating_tile');
+    jest.advanceTimersByTime(0); // The effect landing is now evaluated; this retreat ends at a fork.
     expect(controller.getSnapshot().gamePhase).toBe('turn_end');
     expect(controller.getSnapshot().players[0].cleanseCount).toBe(1);
     expect(controller.getSnapshot().players[0].position).toBe(result === 'retreat_1' ? 5 : result === 'retreat_2' ? 4 : 6);

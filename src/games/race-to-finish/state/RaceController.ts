@@ -4,7 +4,8 @@ import { rollDice, rollMysteryBonus, rollMysteryPenalty, decideBotCleanseUsage }
 import { BotAnswerBag, QuestionGenerator, RandomSource, answerText, wrongAnswer } from '../logic/questions';
 import { GameMode, Player, PenaltyEffectType } from '../types/index';
 import { RaceState, RaceEvent, initialRaceState, raceReducer } from './raceReducer';
-import { QUESTION_TIME_LIMIT_MS, MYSTERY_RESULT_DISPLAY_MS, CLEANSE_CHOICE_MS, DICE_ROLL_DURATION_MS } from './turnTiming';
+import { canActivateTileEffect } from './tileEffectChain';
+import { QUESTION_TIME_LIMIT_MS, MYSTERY_RESULT_DISPLAY_MS, CLEANSE_CHOICE_MS, DICE_ROLL_DURATION_MS, SHORTCUT_ENTRY_PAUSE_MS } from './turnTiming';
 
 // One scheduler owns all turn delays. Animation completion is an explicit event, never a guessed timer.
 export class RaceController {
@@ -128,9 +129,11 @@ export class RaceController {
         if (this.state.answerCorrect || player.isBot)
           this.delay(this.state.answerCorrect ? 1100 : 2800, send({ type: 'ANSWER_FEEDBACK_DONE', id }));
         break;
+      case 'shortcut_pause': this.delay(SHORTCUT_ENTRY_PAUSE_MS, send({ type: 'SHORTCUT_READY', id })); break;
       case 'evaluating_tile': this.delay(0, () => {
         const tile = getTile(player.currentTileId);
-        const result = tile.type === 'bonus' ? rollMysteryBonus(undefined, this.rng)
+        const result = !canActivateTileEffect(this.state.effectChain, tile.id) ? undefined
+          : tile.type === 'bonus' ? rollMysteryBonus(undefined, this.rng)
           : tile.type === 'penalty' ? rollMysteryPenalty(tile.id, undefined, this.rng) : undefined;
         this.send({ type: 'LAND', id, result });
       }); break;

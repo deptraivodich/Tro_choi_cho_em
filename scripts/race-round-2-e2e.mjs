@@ -71,7 +71,7 @@ try {
     if (s.gamePhase === 'evaluating_answer' && !active.isBot && s.answerCorrect === false)
       await b.click('[data-testid="math-understood"]');
     if (s.motion) {
-      const kind = s.motion.kind, category = `${active.isBot ? 'bot' : 'human'}:${kind}:${s.motion.resolveTile}`;
+      const kind = s.motion.kind, category = `${active.isBot ? 'bot' : 'human'}:${kind}:${s.motion.cause === 'dice'}`;
       const before = await gait(active.id); await sleep(45); const after = await gait(active.id);
       if (before !== after) {
         seenMotion.add(category); motionFrames.push({ player: active.character, category, before, after });

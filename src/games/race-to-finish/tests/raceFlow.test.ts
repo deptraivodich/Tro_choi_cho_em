@@ -26,10 +26,14 @@ function correctMove(dice = 2) {
 }
 function completeMotion() {
   for (let i = 0; i < 20 && (s.motion ||
+      s.gamePhase === 'shortcut_pause' ||
       (s.gamePhase === 'evaluating_tile' && getTile(s.players[s.activePlayerIndex].currentTileId).type === 'fork')); i++) {
     if (s.gamePhase === 'evaluating_tile') event({ type: 'LAND' });
+    else if (s.gamePhase === 'shortcut_pause') event({ type: 'SHORTCUT_READY' });
     else event({ type: 'MOTION_DONE' });
   }
+  if (s.gamePhase === 'evaluating_tile' && !s.diceLanding &&
+      !['bonus', 'penalty'].includes(getTile(s.players[s.activePlayerIndex].currentTileId).type)) event({ type: 'LAND' });
 }
 function at(tile: number | string, flags: Partial<Player> = {}) {
   const tileId = typeof tile === 'number' ? `tile_${tile}` : tile;
@@ -37,7 +41,7 @@ function at(tile: number | string, flags: Partial<Player> = {}) {
     pathHistory: Object.values(BOARD_TILES).sort((a, b) => a.order - b.order).slice(0, getTileOrder(tileId) + 1).map(t => t.id), ...flags }, s.players[1]] };
 }
 function mystery(tile: number | string, result: BonusEffectType | PenaltyEffectType, flags: Partial<Player> = {}) {
-  at(tile, flags); s = { ...s, gamePhase: 'evaluating_tile' }; event({ type: 'LAND', result }); event({ type: 'SPIN_DONE' });
+  at(tile, flags); s = { ...s, gamePhase: 'evaluating_tile', effectChain: null }; event({ type: 'LAND', result }); event({ type: 'SPIN_DONE' });
 }
 beforeEach(() => { s = raceReducer(initialRaceState, { type: 'START', mode: 'single', players: [player(), player('p2')] }); });
 
@@ -96,8 +100,13 @@ test.each(SHORTCUTS)('$id: exact dice landing automatically traverses only after
   expect(s.gamePhase).toBe('evaluating_tile');
   expect(s.diceLanding?.tileId).toBe(shortcut.forkTileId);
   event({ type: 'LAND' });
+  expect(s.gamePhase).toBe('shortcut_pause');
+  expect(s.players[0].currentTileId).toBe(shortcut.forkTileId);
+  expect(s.players[0].currentPose).toBe('idle_1');
+  expect(s.motion).toBeNull(); expect(s.diceLanding).toBeNull();
+  event({ type: 'SHORTCUT_READY' });
   expect(s.gamePhase).toBe('applying_effect');
-  expect(s.motion).toEqual({ kind: 'shortcut', remaining: 0, resolveTile: false });
+  expect(s.motion).toEqual({ kind: 'shortcut', remaining: 0, cause: 'shortcut' });
   expect(s.diceLanding).toBeNull(); expect(s.winner).toBeNull();
   expect(s.activePlayerIndex).toBe(0);
   const travelling = s;
@@ -152,7 +161,8 @@ test.each(SHORTCUTS)('$id: retreat retraces the actual shortcut edge without rea
     event({ type: 'APPLY' }); completeMotion();
     expect(s.players[0].currentTileId).toBe(steps === 1 ? shortcut.forkTileId : before.id);
     expect(s.players[0].pathHistory).toEqual(visited.slice(0, -steps));
-    expect(s.gamePhase).toBe('turn_end'); expect(s.diceLanding).toBeNull();
+    expect(s.gamePhase).toBe(steps === 2 && getTile(before.id).type === 'penalty' ? 'evaluating_tile' : 'turn_end');
+    expect(s.diceLanding).toBeNull();
   }
 });
 test('pause rejects gameplay without changing logical position; resume preserves the same motion', () => {
@@ -161,7 +171,7 @@ test('pause rejects gameplay without changing logical position; resume preserves
   expect(s.players).toBe(moving.players); expect(s.actionId).toBe(moving.actionId);
   s = raceReducer(s, { type: 'PAUSE', paused: false }); completeMotion(); expect(s.players[0].position).toBe(2);
 });
-test.each(['advance_1', 'advance_2'] as const)('%s applied once and never chains destination effects', result => {
+test.each(['advance_1', 'advance_2'] as const)('%s applied once and resolves the normal destination after animation', result => {
   mystery(1, result); const id = s.actionId; event({ type: 'APPLY' });
   s = raceReducer(s, { type: 'APPLY', id }); completeMotion();
   expect(s.players[0].position).toBe(result === 'advance_1' ? 2 : 3);
@@ -170,17 +180,20 @@ test.each(['advance_1', 'advance_2'] as const)('%s applied once and never chains
 test('bonus reaching entry exactly or passing it cannot activate a dice-only shortcut', () => {
   mystery(14, 'advance_2'); event({ type: 'APPLY' });
   event({ type: 'MOTION_DONE' }); event({ type: 'MOTION_DONE' });
+  expect(s.gamePhase).toBe('evaluating_tile'); expect(s.diceLanding).toBeNull(); event({ type: 'LAND' });
   expect(s.gamePhase).toBe('turn_end'); expect(s.players[0].currentTileId).toBe('tile_16');
   const landed = s; event({ type: 'LAND' }); expect(s).toBe(landed);
   expect(s).not.toHaveProperty('forkChoiceState');
   s = { ...s, gamePhase: 'ready_to_roll' };
   mystery(1, 'advance_2'); at(3); event({ type: 'APPLY' }); completeMotion();
-  expect(s.players[0].currentTileId).toBe('tile_4_bonus'); expect(s.gamePhase).toBe('turn_end');
+  expect(s.players[0].currentTileId).toBe('tile_4_bonus'); expect(s.gamePhase).toBe('evaluating_tile');
+  event({ type: 'LAND', result: 'shield' }); expect(s.gamePhase).toBe('rolling_mystery');
   expect(s).not.toHaveProperty('forkChoiceState');
 });
 test.each(['retreat_1', 'retreat_2'] as const)('%s backtracks visited route after shortcut', result => {
   mystery(15, result, { pathHistory: ['tile_0', 'tile_4', 'tile_8_mid', 'tile_9', 'tile_10', 'tile_11', 'tile_12', 'tile_13', 'tile_14', 'tile_15'] }); event({ type: 'APPLY' }); completeMotion();
-  expect(s.players[0].currentTileId).toBe(result === 'retreat_1' ? 'tile_14' : 'tile_13'); expect(s.gamePhase).toBe('turn_end');
+  expect(s.players[0].currentTileId).toBe(result === 'retreat_1' ? 'tile_14' : 'tile_13');
+  expect(s.gamePhase).toBe(result === 'retreat_1' ? 'evaluating_tile' : 'turn_end');
 });
 test('retreat to an entrance does not activate a forward shortcut or chain another effect', () => {
   mystery(5, 'retreat_2'); event({ type: 'APPLY' }); completeMotion();
@@ -192,7 +205,10 @@ test('pause at exact entry and duplicate completions cannot traverse twice or sw
   s = raceReducer(s, { type: 'PAUSE', paused: true }); const paused = s;
   event({ type: 'LAND' }); expect(s).toBe(paused);
   s = raceReducer(s, { type: 'PAUSE', paused: false }); const id = s.actionId;
-  event({ type: 'LAND' }); const travelling = s;
+  event({ type: 'LAND' });
+  expect(s.gamePhase).toBe('shortcut_pause');
+  const entry = s; event({ type: 'MOTION_DONE' }); expect(s).toBe(entry);
+  event({ type: 'SHORTCUT_READY' }); const travelling = s;
   s = raceReducer(s, { type: 'LAND', id }); expect(s).toBe(travelling);
   event({ type: 'LAND' }); event({ type: 'NEXT' }); expect(s).toBe(travelling);
   s = raceReducer(s, { type: 'PAUSE', paused: true }); const frozen = s;
@@ -236,7 +252,8 @@ test.each(SHORTCUTS)('$id: reward/penalty steps cannot activate or preserve a la
       const moving = s; event({ type: 'LAND' }); expect(s).toBe(moving); expect(s.diceLanding).toBeNull();
       event({ type: 'MOTION_DONE' });
     }
-    expect(visitedEntry).toBe(true); expect(s.gamePhase).toBe('turn_end');
+    expect(visitedEntry).toBe(true); expect(s.gamePhase).toBe('evaluating_tile');
+    event({ type: 'LAND', result: 'shield' }); expect(s.gamePhase).not.toBe('shortcut_pause');
     expect(s).not.toHaveProperty('forkChoiceState'); expect(s.diceLanding).toBeNull();
   }
 });

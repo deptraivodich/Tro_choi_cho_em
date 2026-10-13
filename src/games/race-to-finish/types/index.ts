@@ -93,6 +93,7 @@ export type GamePhase =
   | 'closing_answer'         // wait for feedback opacity to reach zero before movement
   | 'turn_end'
   | 'moving'                  // step-by-step movement
+  | 'shortcut_pause'          // automatic idle beat at a valid dice entrance
   | 'evaluating_tile'         // arriving at destination tile
   | 'rolling_mystery'         // spinning bonus or penalty reel
   | 'mystery_result'          // displaying result, claiming or applying

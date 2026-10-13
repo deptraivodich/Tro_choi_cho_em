@@ -111,7 +111,7 @@ export const RaceToFinishScreen: React.FC<{ onExit: () => void }> = ({ onExit })
     pendingRoll.current = null; setFocusPending(false); current.game.handleRollDice();
   };
   const modalVisible = menu || !!game.question || ['rolling_mystery', 'mystery_result', 'turn_handover', 'finished'].includes(game.gamePhase);
-  const cameraPaused = menu || background || !focused || allowExit || !!game.question;
+  const cameraPaused = (game.isPaused && !intro) || menu || background || !focused || allowExit || !!game.question;
   return <GestureHandlerRootView style={styles.root} onLayout={event => setViewport(event.nativeEvent.layout)}>
     <StatusBar hidden />
     <Image source={RACE_ASSETS.background} style={StyleSheet.absoluteFill} resizeMode="cover" />

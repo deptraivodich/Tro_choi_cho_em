@@ -59,7 +59,9 @@ try {
   await b.screenshot(`${output}/manual-pan.png`);
   await b.click('[data-testid="roll-dice-button"]');
   check((await state()).gamePhase === 'ready_to_roll', 'Pressing Roll first waits for camera recenter completion');
-  await b.click('[data-testid="race-pause"]');
+  // A CDP touch click waits for button geometry; use the public click immediately
+  // to interrupt the short recenter instead of racing a 400ms animation.
+  await b.evaluate(`document.querySelector('[data-testid="race-pause"]').click()`);
   await wait(async () => (await state()).isPaused);
   const recenterState = await state(), recenterView = await world();
   check(recenterState.gamePhase === 'ready_to_roll', 'Pause can interrupt recenter before a die is rolled');
