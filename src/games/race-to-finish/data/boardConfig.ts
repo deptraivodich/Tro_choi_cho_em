@@ -58,7 +58,7 @@ const BOARD_LAYOUT: Record<string, BoardTile> = {
     nextTileIds: { main: 'tile_4_bonus', shortcut: 'tile_8_mid' },
     isFirstTenTiles: true,
     label: 'tile_4',
-    shortDesc: 'Điểm rẽ (Chọn đường chính hoặc đường tắt)',
+    shortDesc: 'Lối vào đường tắt tự động khi dừng đúng bằng xúc xắc',
   },
   'tile_5': {
     id: 'tile_5',
@@ -190,7 +190,7 @@ const BOARD_LAYOUT: Record<string, BoardTile> = {
     nextTileIds: { main: 'tile_17', shortcut: 'tile_30' },
     isFirstTenTiles: false,
     label: 'tile_16',
-    shortDesc: 'Điểm rẽ (Chọn đường chính hoặc đường tắt)',
+    shortDesc: 'Lối vào đường tắt tự động khi dừng đúng bằng xúc xắc',
   },
   'tile_17': {
     id: 'tile_17',

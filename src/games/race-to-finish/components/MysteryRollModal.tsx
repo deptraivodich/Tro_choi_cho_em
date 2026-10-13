@@ -1,5 +1,6 @@
+import { RaceModal } from './RaceModal';
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Modal, Animated, Easing, ScrollView } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Animated, Easing, ScrollView } from 'react-native';
 import { MysteryRollState, BonusEffectType, PenaltyEffectType, Player } from '../types/index';
 import { BONUS_METADATA, PENALTY_METADATA } from '../logic/gameEngine';
 import { reelPlan, REEL_CARD_WIDTH, REEL_STRIDE } from '../logic/reelPlan';
@@ -44,7 +45,7 @@ export const MysteryRollModal: React.FC<MysteryRollModalProps> = ({
   const metadata = (key: BonusEffectType | PenaltyEffectType) => isBonus ? BONUS_METADATA[key as BonusEffectType] : PENALTY_METADATA[key as PenaltyEffectType];
   const resultMeta = metadata(state.result);
   return (
-    <Modal visible transparent animationType="fade" onRequestClose={() => {}}>
+    <RaceModal visible transparent animationType="fade" onRequestClose={() => {}}>
       <View style={styles.backdrop}>
         <ScrollView style={[styles.modalCard, isBonus ? styles.bonusCard : styles.penaltyCard]} contentContainerStyle={{ alignItems: 'center' }}>
           <View style={[styles.headerBanner, isBonus ? styles.bonusBanner : styles.penaltyBanner]}>
@@ -93,7 +94,7 @@ export const MysteryRollModal: React.FC<MysteryRollModalProps> = ({
           </View>}
         </ScrollView>
       </View>
-    </Modal>
+    </RaceModal>
   );
 };
 

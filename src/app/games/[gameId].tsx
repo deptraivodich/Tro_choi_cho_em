@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, BackHandler } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { GAME_REGISTRY } from '../../games/registry';
 import { GameId } from '../../shared/types/index';
 import { colors } from '../../shared/theme/colors';
@@ -27,13 +27,14 @@ export default function GameScreen() {
 
   // Handle hardware back press on Android
   useEffect(() => {
+    if (gameId === 'race-to-finish') return;
     const onHardwareBack = () => {
       handleExit();
       return true;
     };
     const sub = BackHandler.addEventListener('hardwareBackPress', onHardwareBack);
     return () => sub.remove();
-  }, [handleExit]);
+  }, [handleExit, gameId]);
 
   if (!gameId || !(gameId in GAME_REGISTRY)) {
     return (
@@ -54,7 +55,11 @@ export default function GameScreen() {
   const entry = GAME_REGISTRY[validId];
   const GameComponent = entry.component;
 
-  return <GameComponent onExit={handleExit} />;
+  return <>
+    <Stack.Screen options={{ orientation: validId === 'race-to-finish' ? 'landscape' : 'default',
+      statusBarHidden: validId === 'race-to-finish', gestureEnabled: validId !== 'race-to-finish' }} />
+    <GameComponent onExit={handleExit} />
+  </>;
 }
 
 const styles = StyleSheet.create({

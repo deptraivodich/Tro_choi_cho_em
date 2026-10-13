@@ -1,3 +1,5 @@
+export const SHORTCUT_ENTRY_PAUSE_MS = 450;
 export const QUESTION_TIME_LIMIT_MS = 30_000;
+export const DICE_ROLL_DURATION_MS = 750;
 export const MYSTERY_RESULT_DISPLAY_MS = 1_400;
 export const CLEANSE_CHOICE_MS = 5_000;

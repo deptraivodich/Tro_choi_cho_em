@@ -90,9 +90,10 @@ export type GamePhase =
   | 'rolling'                 // dice roll animation
   | 'showing_question'
   | 'evaluating_answer'
+  | 'closing_answer'         // wait for feedback opacity to reach zero before movement
   | 'turn_end'
   | 'moving'                  // step-by-step movement
-  | 'awaiting_fork_choice'    // at fork: player or bot chooses main path or shortcut
+  | 'shortcut_pause'          // automatic idle beat at a valid dice entrance
   | 'evaluating_tile'         // arriving at destination tile
   | 'rolling_mystery'         // spinning bonus or penalty reel
   | 'mystery_result'          // displaying result, claiming or applying
@@ -117,14 +118,6 @@ export interface MysteryRollState {
   result: BonusEffectType | PenaltyEffectType;
   hasShieldProtection: boolean;
   canUseCleanse: boolean;
-}
-
-export interface ForkChoiceState {
-  forkTileId: string;
-  playerIndex: number;
-  remainingSteps: number;
-  mainNextId: string;
-  shortcutNextId: string;
 }
 
 export interface PendingPenalty {

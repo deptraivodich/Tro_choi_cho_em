@@ -22,9 +22,15 @@ export async function browserSession(width, height, reducedMotion = false) {
   await new Promise((resolve, reject) => { ws.onopen = resolve; ws.onerror = reject; });
   let id = 0;
   const pending = new Map();
+  const eventHandlers = new Map();
   const exceptions = [];
   ws.onmessage = message => {
     const result = JSON.parse(message.data);
+    if (result.method && eventHandlers.has(result.method)) {
+      for (const handler of eventHandlers.get(result.method)) {
+        Promise.resolve().then(() => handler(result.params)).catch(error => exceptions.push(String(error)));
+      }
+    }
     if (result.method === 'Runtime.exceptionThrown') exceptions.push(result.params.exceptionDetails.text + ': ' + (result.params.exceptionDetails.exception?.description || ''));
     const request = pending.get(result.id);
     if (request) {
@@ -75,6 +81,11 @@ export async function browserSession(width, height, reducedMotion = false) {
     const result = await send('Page.captureScreenshot'); await writeFile(file, Buffer.from(result.data, 'base64'));
   };
   return { send, evaluate, click, screenshot, exceptions,
+    onEvent: (method, handler) => {
+      if (!eventHandlers.has(method)) eventHandlers.set(method, new Set());
+      eventHandlers.get(method).add(handler);
+      return () => eventHandlers.get(method)?.delete(handler);
+    },
     close: async () => { try { await send('Browser.close'); } catch {} ws.close(); child.kill(); } };
 }
 

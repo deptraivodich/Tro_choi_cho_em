@@ -1,361 +1,180 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  useWindowDimensions,
-  ScrollView,
-  Image,
-} from 'react-native';
-import { GameHeader } from '../../../shared/components/GameHeader';
-import { GameModal } from '../../../shared/components/GameModal';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, Pressable, Image, AppState, BackHandler, Keyboard } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useIsFocused, useFocusEffect } from 'expo-router';
+import { usePreventRemove } from 'expo-router/react-navigation';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { useRaceGame } from '../hooks/useRaceGame';
-import { GameBoardView, PLAYABLE_BOARD_HEIGHT } from '../components/GameBoardView';
-import { PlayerBanner } from '../components/PlayerBanner';
-import { TurnDashboard } from '../components/TurnDashboard';
+import { GameCamera } from '../components/GameCamera';
+import { RaceHUD, PauseButton } from '../components/RaceHUD';
+import { DiceOverlay } from '../components/DiceOverlay';
+import { EmbeddedRaceModal } from '../components/RaceModal';
 import { SetupModal } from '../components/SetupModal';
 import { MathQuestionModal } from '../components/MathQuestionModal';
 import { MysteryRollModal } from '../components/MysteryRollModal';
-import { ForkChoiceModal } from '../components/ForkChoiceModal';
 import { TurnHandoverModal } from '../components/TurnHandoverModal';
 import { VictoryModal } from '../components/VictoryModal';
-import { RACE_ASSETS } from '../assets/index';
-import { getTile } from '../data/boardConfig';
+import { RACE_ASSETS } from '../assets';
+import { GameMode, Player } from '../types';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { useVietnameseGameText } from '../hooks/useVietnameseGameText';
 
+// First-use asset requests must finish before the short roll/movement animations start.
+const PRELOAD_ASSETS = [
+  { key: 'board', source: RACE_ASSETS.mapLandscape },
+  { key: 'character-atlas', source: RACE_ASSETS.characterAtlas },
+  ...([1, 2, 3, 4, 5, 6] as const).map(face => ({ key: `dice-${face}`, source: RACE_ASSETS.dice[face] })),
+  ...(['fox', 'penguin', 'bunny', 'turtle'] as const).flatMap(character =>
+    (['avatar'] as const).map(pose =>
+      ({ key: `${character}-${pose}`, source: RACE_ASSETS.characters[character][pose] }))),
+];
+
 export const RaceToFinishScreen: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   useVietnameseGameText();
-  const { width, height } = useWindowDimensions();
-  const [modalType, setModalType] = useState<'pause' | 'tutorial' | null>(null);
-  const boardScroll = useRef<ScrollView>(null);
-  const arenaScroll = useRef<ScrollView>(null);
-  const [boardTop, setBoardTop] = useState(140);
-  const [arenaHeight, setArenaHeight] = useState(height - 68);
-  const reducedMotion = useReducedMotion();
-
-  const {
-    gameMode, actionId, motion, question, submittedAnswer, answerCorrect, answerFailure, handleAnswer,
-    handleAcknowledgeAnswer, getQuestionTimeRemaining, onMovementComplete, onSpinComplete, saveError,
-    players,
-    activePlayerIndex,
-    activePlayer,
-    gamePhase,
-    currentDiceValue,
-    mysteryRollState,
-    forkChoiceState,
-    canChooseShortcut,
-    winner,
-    logMessage,
-    isPaused,
-    setIsPaused,
-    startGame,
-    handleRollDice,
-    handleSelectBranch,
-    handleUseCleanse,
-    confirmHandover,
-  } = useRaceGame();
-
-  // Landscape board dimension calculation (16:9 aspect ratio)
-  const isLandscape = width >= height;
-
-  const { boardWidth, boardHeight, needsHorizontalScroll } = useMemo(() => {
-    if (isLandscape) {
-      // Landscape mode (desktop / tablet / rotated phone)
-      const maxW = width - 24;
-      const maxH = height - 160; // Leave space for header and bottom dashboard
-      let bW = maxW;
-      let bH = bW * (9 / 16);
-
-      if (bH > maxH) {
-        bH = maxH;
-        bW = bH * (16 / 9);
-      }
-
-      return {
-        boardWidth: Math.min(bW, 1024),
-        boardHeight: Math.min(bH, 576),
-        needsHorizontalScroll: false,
-      };
-    } else {
-      // Portrait mobile mode: keep readable landscape board with horizontal scrolling
-      const minReadableW = Math.max(width * 1.55, 620);
-      const bH = minReadableW * (9 / 16);
-      return {
-        boardWidth: minReadableW,
-        boardHeight: bH,
-        needsHorizontalScroll: true,
-      };
-    }
-  }, [width, height, isLandscape]);
-
-  const activeTileId = activePlayer?.currentTileId;
+  const game = useRaceGame();
+  const focused = useIsFocused();
+  const insets = useSafeAreaInsets();
+  const reduced = useReducedMotion();
+  const [viewport, setViewport] = useState({ width: 1, height: 1 });
+  const [menu, setMenu] = useState(false);
+  const [intro, setIntro] = useState(false);
+  const [background, setBackground] = useState(AppState.currentState !== 'active');
+  const [allowExit, setAllowExit] = useState(false);
+  const [assetsLoaded, setAssetsLoaded] = useState<Record<string, boolean>>({});
+  const [focusRequest, setFocusRequest] = useState(0);
+  const [focusPending, setFocusPending] = useState(false);
+  const requestCounter = useRef(0);
+  const pendingRoll = useRef<{ request: number; actionId: number; complete: boolean } | null>(null);
+  const assetsReady = PRELOAD_ASSETS.every(asset => assetsLoaded[asset.key]);
+  const exiting = useRef(false);
+  const latest = useRef({ game, intro, menu, focused });
+  React.useLayoutEffect(() => { latest.current = { game, intro, menu, focused }; }, [game, intro, menu, focused]);
+  const requestPause = useCallback(() => {
+    Keyboard.dismiss(); latest.current.game.setIsPaused(true); setMenu(true);
+  }, []);
+  const exit = useCallback(() => {
+    if (exiting.current) return;
+    exiting.current = true; latest.current.game.setIsPaused(true); setAllowExit(true);
+  }, []);
+  useEffect(() => { if (allowExit) onExit(); }, [allowExit, onExit]);
+  usePreventRemove(!allowExit && game.gamePhase !== 'setup' && game.gamePhase !== 'finished', requestPause);
   useEffect(() => {
-    if (!needsHorizontalScroll || !activeTileId || isPaused) return;
-    const center = getTile(activeTileId).xPercent * boardWidth / 100 + 12;
-    boardScroll.current?.scrollTo({ x: Math.max(0, Math.min(boardWidth + 24 - width, center - width / 2)), animated: !reducedMotion });
-  }, [activeTileId, boardWidth, width, needsHorizontalScroll, isPaused, reducedMotion]);
-
+    const subscription = AppState.addEventListener('change', state => {
+      const inactive = state !== 'active'; setBackground(inactive);
+      if (inactive && latest.current.game.gamePhase !== 'setup') requestPause();
+    });
+    return () => subscription.remove();
+  }, [requestPause]);
+  useFocusEffect(useCallback(() => () => {
+    if (!exiting.current && latest.current.game.gamePhase !== 'setup') requestPause();
+  }, [requestPause]));
   useEffect(() => {
-    if (!activeTileId || isPaused || !['moving', 'applying_effect'].includes(gamePhase)) return;
-    const centerY = boardTop + getTile(activeTileId).yPercent * boardHeight / 100;
-    arenaScroll.current?.scrollTo({ y: Math.max(0, centerY - arenaHeight / 2), animated: !reducedMotion });
-  }, [activeTileId, isPaused, gamePhase, boardTop, boardHeight, arenaHeight, reducedMotion]);
-
-  const handleScreenExit = () => {
-    setIsPaused(true);
-    onExit();
+    if (!focused) return;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (latest.current.game.gamePhase === 'setup' || latest.current.game.gamePhase === 'finished') exit();
+      else requestPause();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [focused, exit, requestPause]);
+  const start = (mode: GameMode, players: Player[]) => {
+    pendingRoll.current = null; setFocusPending(false); setFocusRequest(0);
+    setMenu(false); setIntro(true); game.startGame(mode, players);
+    game.setIsPaused(true); // The first turn waits for the camera introduction.
   };
-
-  return (
-    <View style={styles.container}>
-      {/* Universal GameHeader */}
-      <GameHeader
-        title="Đua Về Đích"
-        topicBadge={width < 600 ? 'Toán lớp 5' : 'Rừng Phiêu Lưu • 1-6 Bước'}
-        onPause={() => {
-          setIsPaused(true);
-          setModalType('pause');
-        }}
-        onHelp={() => {
-          setIsPaused(true);
-          setModalType('tutorial');
-        }}
-        onExit={handleScreenExit}
-        extraStats={width >= 600 ? (
-          <View style={styles.statPill}>
-            <Text style={styles.statPillText}>
-              {gameMode === 'single' ? '🤖 Đấu với Máy' : '👥 Nhiều người'}
-            </Text>
-          </View>
-        ) : undefined}
-      />
-
-      {/* Main Arena */}
-      <ScrollView ref={arenaScroll} style={styles.mainArena} contentContainerStyle={styles.mainArenaContent} nestedScrollEnabled
-        onLayout={event => setArenaHeight(event.nativeEvent.layout.height)}>
-        {players.length > 0 && (
-          <View style={styles.arenaContent}>
-            {/* Top Area: Wooden Sign & 4 Player Portraits */}
-            <View style={styles.topAreaOverlay}>
-              <Image
-                source={RACE_ASSETS.ui.header_sign}
-                style={styles.headerSignImg}
-                resizeMode="contain"
-              />
-              <PlayerBanner players={players} activePlayerIndex={activePlayerIndex} />
-            </View>
-
-            {/* Game Board (with horizontal scrolling on portrait phone) */}
-            {needsHorizontalScroll ? (
-              <ScrollView
-                ref={boardScroll}
-                onLayout={event => setBoardTop(event.nativeEvent.layout.y)}
-                horizontal
-                nestedScrollEnabled
-                style={{ width: '100%', height: boardHeight * PLAYABLE_BOARD_HEIGHT, flexGrow: 0, flexShrink: 0 }}
-                showsHorizontalScrollIndicator={true}
-                contentContainerStyle={styles.scrollBoardContainer}
-              >
-                <GameBoardView
-                  players={players}
-                  moving={!!motion && (gamePhase === 'moving' || gamePhase === 'applying_effect')}
-                  paused={isPaused} actionId={actionId} onMovementComplete={onMovementComplete}
-                  activePlayerIndex={activePlayerIndex}
-                  boardWidth={boardWidth}
-                  boardHeight={boardHeight}
-                  activeForkTileId={canChooseShortcut ? forkChoiceState?.forkTileId : undefined}
-                />
-              </ScrollView>
-            ) : (
-              <View style={styles.boardCenterWrapper} onLayout={event => setBoardTop(event.nativeEvent.layout.y)}>
-                <GameBoardView
-                  players={players}
-                  moving={!!motion && (gamePhase === 'moving' || gamePhase === 'applying_effect')}
-                  paused={isPaused} actionId={actionId} onMovementComplete={onMovementComplete}
-                  activePlayerIndex={activePlayerIndex}
-                  boardWidth={boardWidth}
-                  boardHeight={boardHeight}
-                  activeForkTileId={canChooseShortcut ? forkChoiceState?.forkTileId : undefined}
-                />
-              </View>
-            )}
-
-            {/* Bottom Turn Dashboard */}
-            {activePlayer && (
-              <View style={styles.bottomAreaOverlay}>
-                <TurnDashboard
-                  activePlayer={activePlayer}
-                  currentDiceValue={currentDiceValue}
-                  gamePhase={gamePhase} paused={isPaused}
-                  logMessage={logMessage}
-                  onRollPress={handleRollDice}
-                />
-              </View>
-            )}
-          </View>
-        )}
-      </ScrollView>
-
-      {/* Game Modals */}
-
-      {/* 1. Setup Modal */}
-      <SetupModal
-        visible={gamePhase === 'setup'}
-        onStartGame={startGame}
-        onExit={handleScreenExit}
-      />
-
-      {/* 2. Interactive Mystery Roll Modal (Bonus or Penalty) */}
-      <MysteryRollModal
-        visible={gamePhase === 'rolling_mystery' || gamePhase === 'mystery_result'}
-        state={mysteryRollState}
-        paused={isPaused} revealed={gamePhase === 'mystery_result'}
-        actionId={actionId} onSpinComplete={onSpinComplete}
-        activePlayer={activePlayer}
-        onUseCleanse={handleUseCleanse}
-      />
-
-      {question && activePlayer && <MathQuestionModal key={question.key} question={question}
-        player={activePlayer} dice={currentDiceValue} submittedAnswer={submittedAnswer}
-        correct={answerCorrect} failure={answerFailure} paused={isPaused} onAnswer={handleAnswer}
-        onAcknowledge={handleAcknowledgeAnswer} getTimeRemaining={getQuestionTimeRemaining} />}
-      {saveError && <Text accessibilityRole="alert">{saveError}</Text>}
-
-      {/* 3. Fork Branch Selection Modal */}
-      <ForkChoiceModal
-        visible={canChooseShortcut}
-        activePlayer={activePlayer}
-        onSelectBranch={handleSelectBranch}
-        paused={isPaused}
-      />
-
-      {/* 4. Local Multiplayer Handover */}
-      {players[activePlayerIndex] && (
-        <TurnHandoverModal
-          visible={gamePhase === 'turn_handover'}
-          nextPlayer={players[activePlayerIndex]}
-          onReady={confirmHandover}
-        />
-      )}
-
-      {/* 5. Victory Modal */}
-      <VictoryModal
-        visible={gamePhase === 'finished'}
-        winner={winner}
-        allPlayers={players}
-        onPlayAgain={() => startGame(gameMode, players)}
-        onExit={handleScreenExit}
-      />
-
-      {/* 6. Standard Pause & Tutorial Modal */}
-      <GameModal
-        type={modalType}
-        title="Hướng Dẫn: Đua Về Đích"
-        onResume={() => {
-          setIsPaused(false);
-          setModalType(null);
-        }}
-        onRestart={() => {
-          setIsPaused(false);
-          setModalType(null);
-          startGame(gameMode, players);
-        }}
-        onExit={handleScreenExit}
-        onCloseTutorial={() => {
-          setIsPaused(false);
-          setModalType(null);
-        }}
-        tutorialContent={
-          <View>
-            <Text style={styles.tutText}>
-              🏁 **Mục tiêu**: Vượt qua cung đường phiêu lưu uốn lượn để trở thành người đầu tiên cán đích tại bục cúp vinh quang!
-            </Text>
-            <Text style={styles.tutText}>
-              🎲 **Luật Xúc Xắc**:
-              {'\n'}• Tung xúc xắc, trả lời toán đúng rồi đi đủ số ô (1–6 ô). Sai thì đứng yên.
-              {'\n'}• Tới đích trước khi hết bước vẫn thắng ngay!
-            </Text>
-            <Text style={styles.tutText}>
-              ⚡ **Đường Tắt**:
-              {'\n'}• Đổ đúng số, giải toán đúng và dừng đúng ô vào cạnh mũi tên trắng {`>>>`} mới được chọn **Đường tắt**. Đi ngang qua, tiến thêm do thưởng hoặc lùi về ô vào đều không kích hoạt.
-              {'\n'}• Chọn **Đường chính** để ở lại ô vừa dừng; chọn **Đường tắt** để chạy tới đầu bên kia mà không dùng thêm bước xúc xắc.
-            </Text>
-            <Text style={styles.tutText}>
-              🎁 **Ô Thưởng Bí Ẩn**:
-              {'\n'}• Dừng ở ô hộp quà xanh để quay bánh xe may mắn: Tiến thêm 1-2 ô, nhận Khiên Thần bảo vệ, hoặc Ngôi Sao Giải Hạn.
-            </Text>
-            <Text style={styles.tutText}>
-              ⚠️ **Ô Phạt Bí Ẩn**:
-              {'\n'}• Dừng ở ô đỏ để quay hình phạt: Lùi 1-2 ô, mất lượt kế tiếp.
-              {'\n'}• Hình phạt “Về xuất phát” chỉ có thể xuất hiện trong 10 ô đầu; từ ô thứ 11 trở đi hoàn toàn không có!
-            </Text>
-          </View>
-        }
-      />
+  const finishIntro = () => {
+    setIntro(false);
+    if (!exiting.current && latest.current.focused && !latest.current.menu && AppState.currentState === 'active')
+      latest.current.game.setIsPaused(false);
+  };
+  const resume = () => {
+    if (background || !focused || exiting.current) return;
+    setMenu(false); if (!intro) game.setIsPaused(false);
+    const pending = pendingRoll.current;
+    if (!intro && pending?.complete && pending.actionId === game.actionId && game.gamePhase === 'ready_to_roll') {
+      pendingRoll.current = null; setFocusPending(false); game.handleRollDice();
+    }
+  };
+  const requestRoll = () => {
+    if (pendingRoll.current || game.isPaused || intro || game.gamePhase !== 'ready_to_roll' || game.activePlayer?.isBot) return;
+    Keyboard.dismiss();
+    const request = ++requestCounter.current;
+    pendingRoll.current = { request, actionId: game.actionId, complete: false };
+    setFocusPending(true); setFocusRequest(request);
+  };
+  const finishFocus = (request: number) => {
+    const pending = pendingRoll.current, current = latest.current;
+    if (!pending || pending.request !== request || pending.actionId !== current.game.actionId || exiting.current) return;
+    pending.complete = true;
+    if (current.game.isPaused || current.menu || !current.focused || AppState.currentState !== 'active') return;
+    pendingRoll.current = null; setFocusPending(false); current.game.handleRollDice();
+  };
+  const modalVisible = menu || !!game.question || ['rolling_mystery', 'mystery_result', 'turn_handover', 'finished'].includes(game.gamePhase);
+  const cameraPaused = (game.isPaused && !intro) || menu || background || !focused || allowExit || !!game.question;
+  return <GestureHandlerRootView style={styles.root} onLayout={event => setViewport(event.nativeEvent.layout)}>
+    <StatusBar hidden />
+    <Image source={RACE_ASSETS.background} style={StyleSheet.absoluteFill} resizeMode="cover" />
+    <View pointerEvents="none" style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }}>
+      {PRELOAD_ASSETS.map(asset => <Image key={asset.key} source={asset.source} style={{ width: 1, height: 1 }}
+        onLoad={() => setAssetsLoaded(loaded => ({ ...loaded, [asset.key]: true }))} />)}
     </View>
-  );
+        {game.gamePhase === 'setup' ? <SafeAreaView style={styles.safe} edges={['left', 'right', 'top', 'bottom']}>
+          <SetupModal visible assetsReady={assetsReady} onStartGame={start} onExit={exit} />
+        </SafeAreaView> : game.activePlayer && <>
+          <GameCamera width={viewport.width} height={viewport.height} players={game.players} activePlayerIndex={game.activePlayerIndex}
+            moving={!!game.motion && ['moving', 'applying_effect'].includes(game.gamePhase)} shortcut={game.motion?.kind === 'shortcut'}
+            paused={cameraPaused} sessionId={game.sessionId} actionId={game.actionId} reduced={reduced}
+            panEnabled={!intro && !modalVisible && !focusPending} rolling={game.gamePhase === 'rolling'}
+            focusRequest={focusRequest} onFocusComplete={finishFocus}
+            onIntroComplete={finishIntro} onMovementComplete={game.onMovementComplete} />
+          {game.gamePhase === 'rolling' && <DiceOverlay key={game.actionId} value={game.currentDiceValue} paused={game.isPaused}
+            reduced={reduced} getRemaining={game.getDiceTimeRemaining} />}
+          <SafeAreaView pointerEvents="box-none" style={StyleSheet.absoluteFill} edges={['left', 'right', 'top', 'bottom']}>
+          <View pointerEvents="box-none" style={styles.arena}>
+          <RaceHUD player={game.activePlayer} players={game.players} canRoll={!focusPending && !intro && !game.isPaused && game.gamePhase === 'ready_to_roll' && !game.activePlayer.isBot}
+            rolling={game.gamePhase === 'rolling'} intro={intro} message={game.logMessage} onRoll={requestRoll} onPause={requestPause} />
+          </View>
+          </SafeAreaView>
+        </>}
+    {/* In-tree overlays avoid Android Dialog dismissal lag. The feedback fade
+        explicitly completes before the engine can move; BackHandler owns Back. */}
+    {modalVisible && <View testID="race-modal-host" accessibilityViewIsModal style={styles.modalHost}>
+      <View style={[styles.modalSafe, { paddingTop: insets.top, paddingBottom: insets.bottom, paddingLeft: insets.left, paddingRight: insets.right }]}>
+        <View style={styles.arena}>
+          <EmbeddedRaceModal.Provider value>
+            <MysteryRollModal visible={game.gamePhase === 'rolling_mystery' || game.gamePhase === 'mystery_result'} state={game.mysteryRollState}
+              paused={game.isPaused} revealed={game.gamePhase === 'mystery_result'} actionId={game.actionId} onSpinComplete={game.onSpinComplete}
+              activePlayer={game.activePlayer} onUseCleanse={game.handleUseCleanse} />
+            {game.question && game.activePlayer && <MathQuestionModal key={game.question.key} question={game.question}
+              player={game.activePlayer} dice={game.currentDiceValue} submittedAnswer={game.submittedAnswer} correct={game.answerCorrect}
+              failure={game.answerFailure} paused={game.isPaused} onAnswer={game.handleAnswer} onAcknowledge={game.handleAcknowledgeAnswer}
+              closing={game.gamePhase === 'closing_answer'} actionId={game.actionId} onDismissed={game.onFeedbackDismissed}
+              getTimeRemaining={game.getQuestionTimeRemaining} />}
+            {game.activePlayer && <TurnHandoverModal visible={game.gamePhase === 'turn_handover'} nextPlayer={game.activePlayer} onReady={game.confirmHandover} />}
+            <VictoryModal visible={game.gamePhase === 'finished'} winner={game.winner} allPlayers={game.players}
+              onPlayAgain={() => start(game.gameMode, game.players)} onExit={exit} />
+          </EmbeddedRaceModal.Provider>
+          {game.saveError && <Text accessibilityRole="alert" style={styles.error}>{game.saveError}</Text>}
+          {!menu && game.gamePhase !== 'finished' && <View style={styles.modalPause}><PauseButton onPress={requestPause} /></View>}
+          {menu && <View testID="race-pause-menu" accessibilityViewIsModal style={styles.pauseOverlay}>
+            <View style={styles.pauseCard}>
+              <Text style={styles.pauseTitle}>TẠM DỪNG</Text>
+              <Pressable testID="race-resume" accessibilityRole="button" onPress={resume} style={styles.resume}><Text style={styles.buttonText}>TIẾP TỤC</Text></Pressable>
+              <Pressable testID="race-exit" accessibilityRole="button" onPress={exit} style={styles.exit}><Text style={styles.buttonText}>THOÁT</Text></Pressable>
+            </View>
+          </View>}
+        </View>
+      </View>
+    </View>}
+  </GestureHandlerRootView>;
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#064E3B',
-  },
-  statPill: {
-    backgroundColor: '#FEF3C7',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#D97706',
-  },
-  statPillText: {
-    fontSize: 11,
-    fontWeight: '900',
-    color: '#92400E',
-  },
-  mainArena: {
-    flex: 1,
-    width: '100%',
-  },
-  mainArenaContent: {
-    flexGrow: 1,
-  },
-  arenaContent: {
-    width: '100%',
-    alignItems: 'center',
-    paddingBottom: 12,
-  },
-  topAreaOverlay: {
-    width: '100%',
-    alignItems: 'center',
-    paddingVertical: 4,
-    zIndex: 10,
-  },
-  headerSignImg: {
-    width: 170,
-    height: 38,
-    marginBottom: 2,
-  },
-  boardCenterWrapper: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scrollBoardContainer: {
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    paddingHorizontal: 12,
-  },
-  bottomAreaOverlay: {
-    width: '100%',
-    maxWidth: 640,
-    zIndex: 10,
-  },
-  tutText: {
-    fontSize: 13,
-    color: '#374151',
-    lineHeight: 20,
-    marginBottom: 8,
-  },
-});
+const styles = StyleSheet.create({ root: { flex: 1, backgroundColor: '#064E3B' }, safe: { flex: 1 }, arena: { flex: 1, minHeight: 0 },
+  modalSafe: { flex: 1 }, modalPause: { position: 'absolute', right: 8, top: 8 }, error: { position: 'absolute', bottom: 8, color: '#fff' },
+  modalHost: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, zIndex: 2000 },
+  pauseOverlay: { position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,.72)', alignItems: 'center', justifyContent: 'center', padding: 12 },
+  pauseCard: { width: '100%', maxWidth: 330, borderRadius: 24, borderWidth: 3, borderColor: '#D97706', backgroundColor: '#FEF3C7', padding: 20, gap: 12 },
+  pauseTitle: { fontSize: 25, fontWeight: '900', color: '#78350F', textAlign: 'center', marginBottom: 4 },
+  resume: { minHeight: 52, justifyContent: 'center', alignItems: 'center', backgroundColor: '#059669', borderRadius: 14 },
+  exit: { minHeight: 52, justifyContent: 'center', alignItems: 'center', backgroundColor: '#B45309', borderRadius: 14 },
+  buttonText: { color: '#fff', fontSize: 18, fontWeight: '900' } });

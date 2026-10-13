@@ -6,7 +6,6 @@ import {
   backtrackAlongHistory,
   getNextTileId,
   isForkTile,
-  decideBotForkChoice,
   decideBotCleanseUsage,
   getPenaltyReelCards,
 } from '../logic/gameEngine';
@@ -116,9 +115,6 @@ describe('Đua Về Đích - New Rules & Graph Engine Tests', () => {
       expect(shortcutNext).toBe('tile_30'); // shortcut merges into tile_30!
     });
 
-    it('bot chooses shortcut at fork', () => {
-      expect(decideBotForkChoice()).toBe('shortcut');
-    });
   });
 
   describe('4. Strict Enforcement of "Về xuất phát" (Reset to Start) Constraint', () => {

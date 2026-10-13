@@ -3,6 +3,7 @@
 
 export const RACE_ASSETS = {
   background: require('./background.png'),
+  characterAtlas: require('./raw/model_nv.png'),
 
   characters: {
     fox: {
@@ -76,7 +77,7 @@ export const RACE_ASSETS = {
     modal_bonus_frame: require('./ui/modal_bonus_frame.png'),
     modal_penalty_frame: require('./ui/modal_penalty_frame.png'),
   },
-  mapLandscape: require('./map_landscape.png'),
+  mapLandscape: require('./map_landscape_roster.png'),
 } as const;
 
 export type CharacterType = keyof typeof RACE_ASSETS.characters;
