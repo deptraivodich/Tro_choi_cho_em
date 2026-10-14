@@ -1,0 +1,247 @@
+{
+  "schema_version": 1,
+  "design_canvas": {
+    "width": 540,
+    "height": 960,
+    "orientation": "portrait",
+    "render_target_fps": 60
+  },
+  "images": [
+    {
+      "path": "03_assets/images/car-frames.png",
+      "width": 1254,
+      "height": 1254,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "fb0fb62c4077c4e17e1b12be285bdd7fae03302a0f9cb57dabb6fa9cd99348ee",
+      "origin": "AI-generated project artwork from this conversation",
+      "frames": [
+        {
+          "name": "player_upright",
+          "source_rect_xywh": [
+            0,
+            0,
+            627,
+            627
+          ],
+          "pivot_normalized": [
+            0.5,
+            0.5
+          ]
+        },
+        {
+          "name": "player_side",
+          "source_rect_xywh": [
+            627,
+            0,
+            627,
+            627
+          ],
+          "pivot_normalized": [
+            0.5,
+            0.5
+          ]
+        },
+        {
+          "name": "player_overturned",
+          "source_rect_xywh": [
+            0,
+            627,
+            627,
+            627
+          ],
+          "pivot_normalized": [
+            0.5,
+            0.5
+          ]
+        },
+        {
+          "name": "police_old_spare_not_used",
+          "source_rect_xywh": [
+            627,
+            627,
+            627,
+            627
+          ],
+          "pivot_normalized": [
+            0.5,
+            0.5
+          ]
+        }
+      ]
+    },
+    {
+      "path": "03_assets/images/city-road.png",
+      "width": 941,
+      "height": 1672,
+      "mode": "RGB",
+      "has_alpha": false,
+      "sha256": "421b8f95f97c4d50bff44ac825d8b879b9318a5f5e4b47912a9d5a8fe0778c9b",
+      "origin": "AI-generated project artwork from this conversation",
+      "scroll_note": "Prototype renders to a 540x960 tile and crossfades 24px top/bottom over a 936px repeat stride. Do not reset scroll at stage boundaries."
+    },
+    {
+      "path": "03_assets/images/landslide-gap.png",
+      "width": 2172,
+      "height": 724,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "c245eab1e04d3c54a6070f5fe78bbb404bdeddd9a90a64655178bb0c07080e4f",
+      "origin": "AI-generated project artwork from this conversation",
+      "scale_note": "Wide gap overlay. Prototype draw size 330x178; height opens during collapse. Preserve alpha."
+    },
+    {
+      "path": "03_assets/images/police-roll.png",
+      "width": 2172,
+      "height": 724,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "cea461a54ac3f26ddd4e8eeffca678c34bd5d9a14b9c4f415bc782cb14c0da21",
+      "origin": "AI-generated project artwork from this conversation",
+      "frames": [
+        {
+          "name": "police_upright",
+          "source_rect_xywh": [
+            0,
+            0,
+            724,
+            724
+          ],
+          "pivot_normalized": [
+            0.5,
+            0.5
+          ]
+        },
+        {
+          "name": "police_side",
+          "source_rect_xywh": [
+            724,
+            0,
+            724,
+            724
+          ],
+          "pivot_normalized": [
+            0.5,
+            0.5
+          ]
+        },
+        {
+          "name": "police_overturned",
+          "source_rect_xywh": [
+            1448,
+            0,
+            724,
+            724
+          ],
+          "pivot_normalized": [
+            0.5,
+            0.5
+          ]
+        }
+      ]
+    }
+  ],
+  "audio": [
+    {
+      "path": "03_assets/audio/engine_loop.wav",
+      "duration_seconds": 2,
+      "sample_rate": 22050,
+      "channels": 1,
+      "pcm_bits": 16,
+      "loop": true,
+      "origin": "Original procedural synthesis",
+      "integration": "Provided for final app; prototype currently uses only short oscillator feedback."
+    },
+    {
+      "path": "03_assets/audio/police_siren_loop.wav",
+      "duration_seconds": 2,
+      "sample_rate": 22050,
+      "channels": 1,
+      "pcm_bits": 16,
+      "loop": true,
+      "origin": "Original procedural synthesis",
+      "integration": "Provided for final app; prototype currently uses only short oscillator feedback."
+    },
+    {
+      "path": "03_assets/audio/accelerate.wav",
+      "duration_seconds": 0.9,
+      "sample_rate": 22050,
+      "channels": 1,
+      "pcm_bits": 16,
+      "loop": false,
+      "origin": "Original procedural synthesis",
+      "integration": "Provided for final app; prototype currently uses only short oscillator feedback."
+    },
+    {
+      "path": "03_assets/audio/landslide.wav",
+      "duration_seconds": 1.2,
+      "sample_rate": 22050,
+      "channels": 1,
+      "pcm_bits": 16,
+      "loop": false,
+      "origin": "Original procedural synthesis",
+      "integration": "Provided for final app; prototype currently uses only short oscillator feedback."
+    },
+    {
+      "path": "03_assets/audio/jump.wav",
+      "duration_seconds": 0.45,
+      "sample_rate": 22050,
+      "channels": 1,
+      "pcm_bits": 16,
+      "loop": false,
+      "origin": "Original procedural synthesis",
+      "integration": "Provided for final app; prototype currently uses only short oscillator feedback."
+    },
+    {
+      "path": "03_assets/audio/impact_roll.wav",
+      "duration_seconds": 0.65,
+      "sample_rate": 22050,
+      "channels": 1,
+      "pcm_bits": 16,
+      "loop": false,
+      "origin": "Original procedural synthesis",
+      "integration": "Provided for final app; prototype currently uses only short oscillator feedback."
+    },
+    {
+      "path": "03_assets/audio/ui_select.wav",
+      "duration_seconds": 0.1,
+      "sample_rate": 22050,
+      "channels": 1,
+      "pcm_bits": 16,
+      "loop": false,
+      "origin": "Original procedural synthesis",
+      "integration": "Provided for final app; prototype currently uses only short oscillator feedback."
+    },
+    {
+      "path": "03_assets/audio/victory.wav",
+      "duration_seconds": 1.2,
+      "sample_rate": 22050,
+      "channels": 1,
+      "pcm_bits": 16,
+      "loop": false,
+      "origin": "Original procedural synthesis",
+      "integration": "Provided for final app; prototype currently uses only short oscillator feedback."
+    },
+    {
+      "path": "03_assets/audio/loss.wav",
+      "duration_seconds": 0.8,
+      "sample_rate": 22050,
+      "channels": 1,
+      "pcm_bits": 16,
+      "loop": false,
+      "origin": "Original procedural synthesis",
+      "integration": "Provided for final app; prototype currently uses only short oscillator feedback."
+    }
+  ],
+  "runtime_effects": [
+    "dust",
+    "falling_asphalt_chunks",
+    "police_light_flash",
+    "speed_streaks",
+    "car_shadow",
+    "skid_marks",
+    "confetti",
+    "camera_shake",
+    "UI_buttons_and_panels"
+  ]
+}

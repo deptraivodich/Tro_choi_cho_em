@@ -9,7 +9,8 @@ module.exports = {
     '^react-native$': 'react-native-web',
     '^react-native-svg$': '<rootDir>/__mocks__/react-native-svg.js',
     '^@react-native-async-storage/async-storage$': '<rootDir>/node_modules/@react-native-async-storage/async-storage/jest/async-storage-mock.js',
-    '\\.(png|jpg|jpeg|gif|webp)$': '<rootDir>/__mocks__/fileMock.js',
+    '^(expo-asset|expo-audio)$': '<rootDir>/__mocks__/supercarExpo.js',
+    '\\.(png|jpg|jpeg|gif|webp|wav)$': '<rootDir>/__mocks__/fileMock.js',
   },
   transformIgnorePatterns: [
     'node_modules/(?!(@react-native-async-storage|react-native-web)/)',

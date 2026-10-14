@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "seconds": {
+    "chase": 2.2,
+    "collapse": 1.2,
+    "question": null,
+    "launch": 0.9,
+    "jump": 1.4,
+    "impact_correct": 0.55,
+    "impact_wrong": 1.2,
+    "settle_wrong": 0.8,
+    "hero_run": 0.3,
+    "police_launch": 1.2,
+    "police_jump": 1.4,
+    "transition": 3.0,
+    "police_roll_final": 1.8,
+    "escape_final": 2.2
+  },
+  "notes": {
+    "question": "Interactive mode waits for input. Demo video uses 1.5 seconds solely for preview.",
+    "motion": "Durations are reference targets; preserve continuous positions/velocities and collision-free separation when adapting.",
+    "victory": "Use actual sprite bounds/animation completion rather than a blind timer."
+  },
+  "normal_success": [
+    "chase",
+    "collapse",
+    "question",
+    "launch",
+    "jump",
+    "impact_correct",
+    "hero_run",
+    "police_launch",
+    "police_jump",
+    "transition"
+  ],
+  "final_success": [
+    "chase",
+    "collapse",
+    "question",
+    "launch",
+    "jump",
+    "impact_correct",
+    "hero_run",
+    "police_launch",
+    "police_jump",
+    "police_roll_final",
+    "escape_final",
+    "victory"
+  ],
+  "wrong_answer": [
+    "chase",
+    "collapse",
+    "question",
+    "launch",
+    "jump",
+    "impact_wrong",
+    "settle_wrong",
+    "loss"
+  ]
+}

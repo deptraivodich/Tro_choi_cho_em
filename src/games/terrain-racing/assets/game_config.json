@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "game_id": "speed_chase",
+  "stage_count": 5,
+  "units": {
+    "distance": "m",
+    "time": "s",
+    "speed": "m/s"
+  },
+  "questions": [
+    {
+      "stage": 1,
+      "distance": 60,
+      "time": 3,
+      "correct_speed": 20.0,
+      "sample_choices": [
+        10.0,
+        20.0,
+        15.0,
+        30.0
+      ]
+    },
+    {
+      "stage": 2,
+      "distance": 90,
+      "time": 3,
+      "correct_speed": 30.0,
+      "sample_choices": [
+        20.0,
+        30.0,
+        25.0,
+        40.0
+      ]
+    },
+    {
+      "stage": 3,
+      "distance": 100,
+      "time": 4,
+      "correct_speed": 25.0,
+      "sample_choices": [
+        15.0,
+        25.0,
+        20.0,
+        35.0
+      ]
+    },
+    {
+      "stage": 4,
+      "distance": 120,
+      "time": 5,
+      "correct_speed": 24.0,
+      "sample_choices": [
+        14.0,
+        24.0,
+        19.0,
+        34.0
+      ]
+    },
+    {
+      "stage": 5,
+      "distance": 150,
+      "time": 5,
+      "correct_speed": 30.0,
+      "sample_choices": [
+        20.0,
+        30.0,
+        25.0,
+        40.0
+      ]
+    }
+  ],
+  "answer_policy": {
+    "count": 4,
+    "positive_unique_values": true,
+    "exactly_one_correct": true,
+    "at_least_one_below_and_one_above": true,
+    "lock_after_first_selection": true,
+    "answer_timeout": null
+  },
+  "outcomes": {
+    "equal": "player_clears_and_continues",
+    "below": "player_falls_then_loss",
+    "above": "player_clears_then_rolls_then_loss"
+  },
+  "police_outcome": {
+    "stages_1_to_4": "clears_after_player",
+    "stage_5": "clears_then_rolls_on_far_bank"
+  },
+  "victory": {
+    "stage": 5,
+    "conditions": [
+      "player_entire_sprite_above_viewport",
+      "police_on_far_bank_and_overturned",
+      "final_animations_completed"
+    ]
+  },
+  "replay": "restart_stage_1",
+  "content_note": "Five fixed sample questions; final app can use its own question bank without changing the outcome model."
+}
