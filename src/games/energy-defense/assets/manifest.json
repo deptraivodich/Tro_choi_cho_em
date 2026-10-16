@@ -1,0 +1,128 @@
+{
+  "generator": "Built-in image_gen tool; original commissioned generation, no downloaded third-party art",
+  "atlas": {
+    "file": "enemies-atlas.png",
+    "width": 1024,
+    "height": 768,
+    "cell": 256,
+    "columns": 4,
+    "rows": [
+      "scout",
+      "slime",
+      "golem"
+    ],
+    "groundPivot": [
+      128,
+      224
+    ],
+    "frameCount": 4,
+    "sourceRectsXYWH": [
+      [
+        [
+          14,
+          11,
+          327,
+          330
+        ],
+        [
+          376,
+          23,
+          320,
+          321
+        ],
+        [
+          728,
+          17,
+          319,
+          327
+        ],
+        [
+          1104,
+          10,
+          324,
+          317
+        ]
+      ],
+      [
+        [
+          37,
+          365,
+          308,
+          324
+        ],
+        [
+          400,
+          419,
+          310,
+          270
+        ],
+        [
+          781,
+          374,
+          301,
+          306
+        ],
+        [
+          1141,
+          363,
+          292,
+          301
+        ]
+      ],
+      [
+        [
+          13,
+          703,
+          365,
+          353
+        ],
+        [
+          408,
+          733,
+          309,
+          323
+        ],
+        [
+          756,
+          706,
+          326,
+          351
+        ],
+        [
+          1109,
+          704,
+          325,
+          347
+        ]
+      ]
+    ]
+  },
+  "turret": {
+    "baseGroundPivot": [
+      256,
+      448
+    ],
+    "headPivot": [
+      256,
+      256
+    ],
+    "headMuzzle": [
+      465,
+      251
+    ]
+  },
+  "citadel": {
+    "groundPivot": [
+      256,
+      488
+    ]
+  },
+  "sourceFiles": {
+    "enemies": "enemy-sheet-source.png",
+    "turret": "crystal-turret-source.png",
+    "citadel": "citadel-source.png",
+    "environment": "valley-source.png"
+  },
+  "sourceDirectory": "source-art/",
+  "processing": "Alpha-preserving crop, uniform per-character scaling and atlas packing; no generative repaint or background removal."
+}
