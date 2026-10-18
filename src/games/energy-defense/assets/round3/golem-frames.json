@@ -1,0 +1,13 @@
+{
+  "source": "source-art/enemies.png",
+  "description": "Complete golems cross the original 362px grid. Boundaries sit in the transparent gaps, not through limbs. Ground X anchors align the torso across the four authored poses.",
+  "scale": 0.574585635359116,
+  "visibleAlphaThreshold": 16,
+  "fringePadding": 2,
+  "frames": [
+    { "sourceRect": [0, 724, 402, 1086], "groundX": 205 },
+    { "sourceRect": [402, 724, 739, 1086], "groundX": 565 },
+    { "sourceRect": [739, 724, 1091, 1086], "groundX": 925 },
+    { "sourceRect": [1091, 724, 1448, 1086], "groundX": 1285 }
+  ]
+}

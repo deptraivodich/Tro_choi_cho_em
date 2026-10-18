@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useDerivedValue, useReducedMotion, useSharedValue, type SharedValue } from 'react-native-reanimated';
+import { portraitCamera, scenePoint } from '../presentation/portrait';
 import type { Enemy } from '../logic/controller';
 import { clamp01, MAP, worldToMap, type ShotTarget } from '../presentation/combat';
 import { CreatureSprite } from './CreatureSprite';
@@ -9,11 +10,12 @@ import { DefenseIcon } from './DefensePrimitives';
 
 type Props = {
   creeps: Enemy[]; hp: number; correct: number; charged: boolean; target: ShotTarget | null;
-  active: boolean; compact?: boolean; landscape?: boolean;
+  fullscreen?: boolean; hudHeight?: number; active: boolean; compact?: boolean; landscape?: boolean;
   clock: SharedValue<number>; shotStart: SharedValue<number>; award?: number;
 };
-export function Battlefield({ creeps, hp, correct, charged, target, active, compact = false, landscape = false, clock, shotStart, award = 25 }: Props) {
+export function Battlefield({ creeps, hp, correct, charged, target, active, compact = false, landscape = false, clock, shotStart, award = 25, fullscreen = false, hudHeight = 104 }: Props) {
   const [width, setWidth] = useState(0);
+  const [height, setHeight] = useState(0);
   const scale = width / MAP.width;
   const targetPoint = useSharedValue({ x: 120, y: 100 });
   const damageStart = useSharedValue(-1000), oldHp = useSharedValue(hp);
@@ -26,10 +28,10 @@ export function Battlefield({ creeps, hp, correct, charged, target, active, comp
   const targetId = target?.id, targetX = target?.x, targetY = target?.y;
   useEffect(() => {
     if (targetId !== undefined && targetX !== undefined && targetY !== undefined) {
-      const p = worldToMap(targetX, targetY);
+      const p = scenePoint(worldToMap(targetX, targetY), fullscreen);
       targetPoint.set({ x: p.x, y: p.y - 32 });
     }
-  }, [targetId, targetX, targetY, targetPoint]);
+  }, [targetId, targetX, targetY, targetPoint, fullscreen]);
   useEffect(() => {
     if (hp < previousHp.current) {
       oldHp.set(previousHp.current);
@@ -45,6 +47,25 @@ export function Battlefield({ creeps, hp, correct, charged, target, active, comp
     <View style={s.hpLine}>{compact && <DefenseIcon name="shield" size={13} color={hp > 30 ? '#CFF8D8' : '#FFC7A1'} />}<Text testID="energy-base-hp" style={[s.hpValue, compact && s.hpValueCompact]}>{hp}<Text style={s.hpMax}> / 100 HP</Text></Text></View>
     <View style={s.hpTrack}><Animated.View style={[s.hpFill, { backgroundColor: hp > 30 ? '#A5E7B5' : '#FFAD80' }, hpFill]} /></View>
   </View>;
+  if (fullscreen) {
+    const camera = portraitCamera(width, height, hudHeight + 4);
+    return <View testID="energy-battlefield" style={{ flex: 1, minHeight: 0 }}>
+      <View testID="energy-combat-viewport" style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]}
+        onLayout={e => { setWidth(e.nativeEvent.layout.width); setHeight(e.nativeEvent.layout.height); }}>
+        <Image source={require('../assets/round3/ground.webp')} resizeMode="cover" fadeDuration={0} style={StyleSheet.absoluteFill}/>
+        {width > 0 && height > 0 && <View pointerEvents="none" testID="energy-portrait-world" style={{ position: 'absolute', width: 440, height: 700, left: camera.x, top: camera.y, transformOrigin: [0, 0, 0], transform: [{ scale: camera.scale }] }}>
+          <PaintedGround portrait/>
+          <CrystalCitadel portrait hp={hp} damage={damage} clock={clock}/>
+          <CrystalTurret portrait clock={clock} start={shotStart} targetPoint={targetPoint} firing={charged}/>
+          {creeps.map(creep => <CreatureSprite key={creep.id} portrait creep={creep} scale={1} active={active}
+            tracked={creep.id === (target?.id ?? creeps[0]?.id)} attacked={charged && creep.id === target?.id}
+            clock={clock} shotStart={shotStart} targetPoint={targetPoint}/>)}
+          {charged && <CombatEffects portrait clock={clock} start={shotStart} targetPoint={targetPoint} firing={charged} hasTarget={!!target} award={award}/>}
+        </View>}
+        <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, s.damageOutline, outline]}/>
+      </View>
+    </View>;
+  }
   return <View style={[s.card, compact && s.cardCompact]} testID="energy-battlefield">
     {!landscape && <View style={[s.heading, compact && s.headingCompact]}>
       <View>{!compact && <Text style={s.eyebrow}>VÙNG PHÒNG THỦ</Text>}<Text style={[s.name, compact && s.nameCompact]}>Thung lũng pha lê</Text>

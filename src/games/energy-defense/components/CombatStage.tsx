@@ -1,32 +1,34 @@
 import React from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useReducedMotion, type SharedValue } from 'react-native-reanimated';
+import { portraitPoint, scenePoint } from '../presentation/portrait';
 import Svg, { Circle, Ellipse, G, Path } from 'react-native-svg';
 import { clamp01, MAP, muzzleAt, projectileAt, recoilAt, SHOT, type Point } from '../presentation/combat';
 
-type Timeline = { clock: SharedValue<number>; start: SharedValue<number>; firing: boolean; targetPoint: SharedValue<Point> };
+type Timeline = { clock: SharedValue<number>; start: SharedValue<number>; firing: boolean; targetPoint: SharedValue<Point>; portrait?: boolean };
 const road = 'M-25 134H327Q351 134 351 158V245Q351 269 375 269H611';
-export const PaintedGround = React.memo(function PaintedGround() {
+export const PaintedGround = React.memo(function PaintedGround({ portrait = false }: { portrait?: boolean }) {
   return <>
-    <Image source={require('../assets/round3/ground.webp')} resizeMode="stretch" fadeDuration={0} style={s.fillImage} />
-    <Svg width={700} height={440} viewBox="0 0 700 440" style={StyleSheet.absoluteFill}>
+    {!portrait && <Image source={require('../assets/round3/ground.webp')} resizeMode="stretch" fadeDuration={0} style={s.fillImage} />}
+    <Svg width={portrait ? 440 : 700} height={portrait ? 700 : 440} viewBox={portrait ? "0 0 440 700" : "0 0 700 440"} style={StyleSheet.absoluteFill}><G transform={portrait ? "matrix(0 1 -1 0 440 0)" : undefined}>
       <Path d={road} transform="translate(0 4)" stroke="#46502D" strokeWidth={66} strokeLinejoin="round" fill="none" opacity={.35} />
       <Path d={road} stroke="#4F6132" strokeWidth={64} strokeLinejoin="round" fill="none" />
       <Path d={road} stroke="#B4995E" strokeWidth={58} strokeLinejoin="round" fill="none" />
       <Path d={road} stroke="#DCC18A" strokeWidth={51} strokeLinejoin="round" fill="none" />
       <Path d={road} stroke="#ECD29A" strokeWidth={38} strokeLinejoin="round" strokeDasharray="3 14" strokeOpacity={.3} fill="none" />
       {[55, 115, 202, 274].map((x,i) => <G key={x}><Ellipse cx={x} cy={126+i%2*14} rx={4} ry={2} fill="#B99A62" /><Path d={'M'+(x+9)+' 146l6-2'} stroke="#B69A65" strokeWidth={2} /></G>)}
-      <Ellipse cx={216} cy={329} rx={70} ry={21} fill="#374B2C" opacity={.28} />
+      {!portrait && <Ellipse cx={216} cy={329} rx={70} ry={21} fill="#374B2C" opacity={.28} />}
       <G transform="translate(12 93)"><Path d="M0 55V8h13v47m27 0V8h13v47M-4 10V0h61v10Z" fill="#A58250" stroke="#4F4E32" strokeWidth={3} /><Path d="M7 4h43" stroke="#E5C58C" strokeWidth={3} /></G>
-    </Svg>
+    </G>{portrait && <Ellipse cx={186} cy={288} rx={70} ry={21} fill="#374B2C" opacity={.28}/>}</Svg>
   </>;
 });
 
-export function CrystalTurret({ clock, start, firing, targetPoint }: Timeline) {
+export function CrystalTurret({ clock, start, firing, targetPoint, portrait = false }: Timeline) {
   const reduced = useReducedMotion();
+  const turret = scenePoint({ x: MAP.turretX, y: MAP.turretY }, portrait);
   const head = useAnimatedStyle(() => {
     const p = targetPoint.get();
-    const angle = Math.atan2(p.y - MAP.turretY, p.x - MAP.turretX);
+    const angle = Math.atan2(p.y - turret.y, p.x - turret.x);
     const ms = firing ? clock.get() - start.get() : -1;
     const recoil = recoilAt(ms, reduced);
     return { transform: [{ rotate: `${angle}rad` }, { translateX: -recoil }] };
@@ -37,8 +39,8 @@ export function CrystalTurret({ clock, start, firing, targetPoint }: Timeline) {
     return { opacity: .12 + charge * .65 + (reduced ? 0 : Math.sin(clock.get() / 650) * .04), transform: [{ scale: 1 + charge * .28 }] };
   });
   return <View pointerEvents="none" testID="energy-turret" style={StyleSheet.absoluteFill}>
-    <Image testID="energy-turret-base" source={require('../assets/round3/turret-base.png')} fadeDuration={0} style={s.turretBase} />
-    <Animated.View testID="energy-turret-head" style={[s.turretHead, head]}>
+    <Image testID="energy-turret-base" source={require('../assets/round3/turret-base.png')} fadeDuration={0} style={[s.turretBase, portrait && { left: turret.x - 74, top: turret.y + 72 - 148 * .93 }]} />
+    <Animated.View testID="energy-turret-head" style={[s.turretHead, portrait && { left: turret.x - 82, top: turret.y - 82 }, head]}>
       <Image source={require('../assets/round3/turret-head.png')} fadeDuration={0} style={s.fillImage} />
       <Animated.View style={[s.core, core]} />
       <View testID="energy-muzzle-anchor" style={{ position: 'absolute', left: 148, top: 81, width: 2, height: 2 }} />
@@ -46,12 +48,12 @@ export function CrystalTurret({ clock, start, firing, targetPoint }: Timeline) {
   </View>;
 }
 
-export function CrystalCitadel({ hp, damage, clock }: { hp: number; damage: SharedValue<number>; clock: SharedValue<number> }) {
+export function CrystalCitadel({ hp, damage, clock, portrait = false }: { hp: number; damage: SharedValue<number>; clock: SharedValue<number>; portrait?: boolean }) {
   const reduced = useReducedMotion();
   const shake = useAnimatedStyle(() => ({ transform: [{ translateX: reduced ? 0 : Math.sin(damage.get() * Math.PI * 6) * damage.get() * 4 }] }));
   const shield = useAnimatedStyle(() => ({ opacity: .15 + damage.get() * .7 + (hp <= 30 && !reduced ? Math.sin(clock.get() / 350) * .1 + .1 : 0), transform: [{ scale: 1 + damage.get() * .08 }] }));
   const flash = useAnimatedStyle(() => ({ opacity: damage.get() * .6 }));
-  return <View pointerEvents="none" testID="energy-citadel" style={s.citadel}>
+  return <View pointerEvents="none" testID="energy-citadel" style={[s.citadel, portrait && { left: portraitPoint({ x: MAP.baseX, y: MAP.baseY }).x - 100, top: MAP.baseX - 200 * .953 }]}>
     <View style={s.castleShadow} />
     <Animated.View style={[StyleSheet.absoluteFill, shake]}><Image source={require('../assets/round3/citadel.png')} fadeDuration={0} style={s.fillImage} />
       <Animated.Image source={require('../assets/round3/citadel.png')} fadeDuration={0} tintColor="#FFE6A8" style={[s.fillImage, flash]} />
@@ -72,8 +74,9 @@ function MagicParticle({ index, clock, start, targetPoint, firing }: Timeline & 
   return <Animated.View style={[s.spark, index % 2 === 0 && { backgroundColor: '#FFF4C6' }, motion]} />;
 }
 
-export function CombatEffects({ clock, start, firing, targetPoint, hasTarget, award = 25 }: Timeline & { hasTarget: boolean; award?: number }) {
+export function CombatEffects({ clock, start, firing, targetPoint, hasTarget, award = 25, portrait = false }: Timeline & { hasTarget: boolean; award?: number }) {
   const reduced = useReducedMotion();
+  const turret = scenePoint({ x: MAP.turretX, y: MAP.turretY }, portrait);
   const charge = useAnimatedStyle(() => {
     const ms = firing ? clock.get() - start.get() : -1;
     const t = clamp01(ms / SHOT.charge);
@@ -81,13 +84,13 @@ export function CombatEffects({ clock, start, firing, targetPoint, hasTarget, aw
   });
   const muzzle = useAnimatedStyle(() => {
     const ms = firing ? clock.get() - start.get() : -1;
-    const p = targetPoint.get(), angle = Math.atan2(p.y - MAP.turretY, p.x - MAP.turretX), origin = muzzleAt(angle, recoilAt(ms, reduced));
+    const p = targetPoint.get(), angle = Math.atan2(p.y - turret.y, p.x - turret.x), origin = muzzleAt(angle, recoilAt(ms, reduced), turret);
     return { opacity: hasTarget && ms >= SHOT.charge && ms < SHOT.charge + 95 ? 1 - (ms - SHOT.charge) / 95 : 0,
       transform: [{ translateX: origin.x - 17 }, { translateY: origin.y - 17 }, { scale: reduced ? 1 : 1 + clamp01((ms - SHOT.charge) / 95) }] };
   });
   const projectile = useAnimatedStyle(() => {
     const ms = firing ? clock.get() - start.get() : -1;
-    const p = targetPoint.get(), angle = Math.atan2(p.y - MAP.turretY, p.x - MAP.turretX), origin = muzzleAt(angle, recoilAt(ms, reduced));
+    const p = targetPoint.get(), angle = Math.atan2(p.y - turret.y, p.x - turret.x), origin = muzzleAt(angle, recoilAt(ms, reduced), turret);
     const point = projectileAt(ms, origin, p);
     return { opacity: hasTarget && ms >= SHOT.charge && ms < SHOT.impact ? 1 : 0,
       transform: [{ translateX: point.x - 16 }, { translateY: point.y - 8 }, { rotate: `${angle}rad` }] };
@@ -105,7 +108,7 @@ export function CombatEffects({ clock, start, firing, targetPoint, hasTarget, aw
       transform: [{ translateX: p.x - 24 }, { translateY: p.y - 28 - (reduced ? 0 : t * 28) }] };
   });
   return <View pointerEvents="none" testID="energy-shot" style={StyleSheet.absoluteFill}>
-    <Animated.View testID="energy-charge" style={[s.charge, charge]}><View style={s.chargeInner} /></Animated.View>
+    <Animated.View testID="energy-charge" style={[s.charge, portrait && { left: turret.x - 29, top: turret.y - 29 }, charge]}><View style={s.chargeInner} /></Animated.View>
     <Animated.View testID="energy-muzzle" style={[s.muzzle, muzzle]}><View style={s.muzzleCore} /></Animated.View>
     <Animated.View testID="energy-projectile" style={[s.projectile, projectile]}><View style={s.trail} /><View style={s.projectileCore} /></Animated.View>
     <Animated.View testID="energy-impact" style={[s.impact, impact]}><Svg width={52} height={52}><Path d="m26 1 5 15 15-7-7 15 12 6-16 3 2 16-11-12-11 12 2-16L1 30l12-6L6 9l15 7Z" fill="#FFEDAC" stroke="#F8FFFF" strokeWidth={1.5} /><Circle cx={26} cy={26} r={8} fill="#FFFFFF" /></Svg></Animated.View>

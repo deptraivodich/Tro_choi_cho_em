@@ -84,42 +84,78 @@
     {
       "row": 2,
       "column": 0,
-      "sourceCellAlphaBounds": [
+      "sourceRect": [
         0,
-        4,
-        362,
-        338
-      ]
+        724,
+        402,
+        1086
+      ],
+      "sourceCellAlphaBounds": [
+        13,
+        6,
+        390,
+        306
+      ],
+      "sourceGroundX": 205,
+      "scale": 0.574585635359116,
+      "visibleFootY": 228
     },
     {
       "row": 2,
       "column": 1,
+      "sourceRect": [
+        402,
+        724,
+        739,
+        1086
+      ],
       "sourceCellAlphaBounds": [
-        0,
-        1,
-        362,
-        338
-      ]
+        12,
+        3,
+        331,
+        290
+      ],
+      "sourceGroundX": 565,
+      "scale": 0.574585635359116,
+      "visibleFootY": 228
     },
     {
       "row": 2,
       "column": 2,
+      "sourceRect": [
+        739,
+        724,
+        1091,
+        1086
+      ],
       "sourceCellAlphaBounds": [
-        0,
-        0,
-        358,
-        313
-      ]
+        6,
+        3,
+        341,
+        309
+      ],
+      "sourceGroundX": 925,
+      "scale": 0.574585635359116,
+      "visibleFootY": 228
     },
     {
       "row": 2,
       "column": 3,
+      "sourceRect": [
+        1091,
+        724,
+        1448,
+        1086
+      ],
       "sourceCellAlphaBounds": [
-        5,
-        4,
-        361,
-        313
-      ]
+        11,
+        6,
+        349,
+        311
+      ],
+      "sourceGroundX": 1285,
+      "scale": 0.574585635359116,
+      "visibleFootY": 228
     }
   ],
   "atlasSize": [
@@ -140,5 +176,6 @@
     256
   ],
   "sourceDirectory": "source-art/",
-  "processing": "Alpha-preserving crop, uniform per-row scale, atlas packing and WebP encoding only."
+  "sourceEnemySha256": "0d33f7dbdb54267bc096657a0bf582978e8652f459c06c09100f29d06fc632ae",
+  "processing": "Original scout/slime packing unchanged. Golem uses explicit full-silhouette source rectangles, 2px antialias fringe, original 208/362 scale and shared ground anchors. No repainting."
 }

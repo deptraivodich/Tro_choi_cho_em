@@ -23,9 +23,9 @@ export function recoilAt(elapsed: number, reduced: boolean) {
   'worklet';
   return !reduced && elapsed >= SHOT.charge && elapsed < SHOT.charge + 110 ? Math.sin((elapsed - SHOT.charge) / 110 * Math.PI) * 7 : 0;
 }
-export function muzzleAt(angle: number, recoil = 0): Point {
+export function muzzleAt(angle: number, recoil = 0, origin: Point = { x: MAP.turretX, y: MAP.turretY }): Point {
   'worklet';
-  return { x: MAP.turretX + Math.cos(angle) * (MAP.muzzleRadius - recoil), y: MAP.turretY + Math.sin(angle) * (MAP.muzzleRadius - recoil) };
+  return { x: origin.x + Math.cos(angle) * (MAP.muzzleRadius - recoil), y: origin.y + Math.sin(angle) * (MAP.muzzleRadius - recoil) };
 }
 export function projectileAt(elapsed: number, origin: Point, target: Point): Point {
   'worklet';

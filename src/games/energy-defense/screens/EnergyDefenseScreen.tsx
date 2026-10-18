@@ -1,6 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { AppState, BackHandler, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { MathActionDock } from '../components/MathActionDock';
+import { MobileDefenseHUD } from '../components/MobileDefenseHUD';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSharedValue } from 'react-native-reanimated';
 import { soundManager } from '../../../shared/audio/audioController';
 import { profileManager } from '../../../shared/storage/profileManager';
@@ -31,6 +35,9 @@ export function EnergyDefenseScreen({ onExit }: { onExit: () => void }) {
     lastHp.current=state.hp;lastStatus.current=state.status;
   },[state.hp,state.status,state.reason]);
   const {width,height}=useWindowDimensions();
+  const insets=useSafeAreaInsets();
+  const mobilePortrait=width<600&&height>width;
+  const [hudHeight,setHudHeight]=useState(104);
   const compact=width<1000||height<1000,landscape=compact&&width>=700&&width>height;
   const active=state.status==='running'&&!state.paused;
   const clock=useBattleClock(active),shotStart=useSharedValue(0);
@@ -101,9 +108,20 @@ export function EnergyDefenseScreen({ onExit }: { onExit: () => void }) {
   const openHistory=()=>{setView('history');void readHistory();};
   const overlay=<DefenseOverlay state={state} view={view} records={records} error={error} sound={sound} onResume={resume} onChoose={()=>void choose()} onExit={()=>void exit()}
     onOffer={yes=>{clock.set(controller.now);controller.acceptEndless(yes);}} onClose={back} onHistory={openHistory} onRetry={()=>{void persist().then(readHistory).catch(()=>setError('Thiết bị chưa lưu được lịch sử. Em có thể thử lại.'));}} onSound={toggleSound}/>;
-  if(state.status==='select')return <SafeAreaView style={s.root}><Preparation mode={state.mode} onMode={mode=>controller.selectMode(mode)} onStart={start} onHistory={openHistory} onExit={()=>void exit()}/>{overlay}</SafeAreaView>;
+  if(state.status==='select')return <SafeAreaView style={s.root}><Stack.Screen options={{orientation:'portrait',statusBarHidden:false}}/><Preparation mode={state.mode} onMode={mode=>controller.selectMode(mode)} onStart={start} onHistory={openHistory} onExit={()=>void exit()}/>{overlay}</SafeAreaView>;
+  if(mobilePortrait)return <View style={{flex:1,backgroundColor:'#203E32'}} testID="energy-defense">
+    <Stack.Screen options={{orientation:'portrait',statusBarHidden:true}}/>
+    <StatusBar hidden/>
+    <View style={{flex:1,minHeight:0}}>
+      <Battlefield fullscreen hudHeight={hudHeight} creeps={state.enemies} hp={state.hp} correct={state.correct} charged={!!state.shot} target={target} active={active} clock={clock} shotStart={shotStart} award={state.endless?10:25}/>
+      <MobileDefenseHUD state={state} top={insets.top} left={insets.left} right={insets.right} onExit={()=>void exit()} onPause={pause} onHeight={setHudHeight}/>
+    </View>
+    <MathActionDock state={state} sum={controller.selectedSum()} bottom={insets.bottom} left={insets.left} right={insets.right} onToggle={id=>{controller.toggle(id);soundManager.playTap();}} onFire={fire}/>
+    {overlay}
+  </View>;
   const modeName=MODES.find(m=>m.id===state.mode)!.label;
   return <SafeAreaView edges={['top','bottom','left','right']} style={s.root} testID="energy-defense">
+    <Stack.Screen options={{orientation:'portrait',statusBarHidden:false}}/>
     <ScrollView scrollEnabled={!compact} contentContainerStyle={[s.page,compact&&{flex:1,paddingHorizontal:8,paddingBottom:2}]} showsVerticalScrollIndicator={false}>
       <View style={[s.content,compact&&{flex:1,minHeight:0}]}>
         <DefenseHUD score={state.endless?state.endlessScore:state.score} elapsed={state.endless?state.endlessSeconds:state.elapsedSeconds} total={360} sound={sound}
@@ -114,7 +132,7 @@ export function EnergyDefenseScreen({ onExit }: { onExit: () => void }) {
           <Text testID="energy-wave-count" style={s.waveCount}>{state.endless?state.endlessKills+' hạ':state.enemies.length+' trên đường'}</Text>
         </View>
         <View style={[s.layout,(width>=1000||landscape)&&s.wide,compact&&{flex:1,minHeight:0,gap:7},landscape&&{alignItems:'stretch'}]}>
-          <View style={[(width>=1000||landscape)?{flex:1.5,minWidth:0}:{width:'100%'},landscape&&{flex:1}]}>
+          <View style={[(width>=1000||landscape)?{flex:1.5,minWidth:0}:{width:'100%'},compact&&!landscape&&height<700&&{maxWidth:304,alignSelf:'center'},landscape&&{flex:1}]}>
             <View style={state.paused?{opacity:0}:undefined}><Battlefield creeps={state.enemies} hp={state.hp} correct={state.correct} charged={!!state.shot} target={target} active={active} compact={compact} landscape={landscape} clock={clock} shotStart={shotStart} award={state.endless?10:25}/></View>
           </View>
           <View style={[width>=1000?{flex:1,minWidth:0,maxWidth:490}:compact?{flex:1,minHeight:0}:undefined,landscape&&{flex:1}]}>
