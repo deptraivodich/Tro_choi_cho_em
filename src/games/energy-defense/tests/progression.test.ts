@@ -32,12 +32,12 @@ test('selection is inert until Start, and running mode cannot be changed',()=>{
   expect(c.selectMode('medium')).toBe(true);c.start();expect(c.selectMode('hard')).toBe(false);expect(c.getSnapshot().mode).toBe('medium');expect(c.start()).toBe(false);
 });
 test('spawning all configured enemies does not complete a wave while they remain alive',()=>{
-  const c=make();c.start();c.advanceTo(6000);const s=c.getSnapshot();expect(s.spawned).toBe(3);expect(s.enemies).toHaveLength(3);expect(s.wave).toBe(1);
-  c.advanceTo(6000);expect(c.getSnapshot()).toBe(s);
+  const c=make();c.start();c.advanceTo(12000);const s=c.getSnapshot();expect(s.spawned).toBe(3);expect(s.enemies).toHaveLength(3);expect(s.wave).toBe(1);
+  c.advanceTo(12000);expect(c.getSnapshot()).toBe(s);
 });
 test('pause preserves a shot and repeated fire/advance never doubles rewards',()=>{
-  const c=make();c.start();c.toggle('one');expect(c.fire()).toBe(true);expect(c.fire()).toBe(false);c.advanceTo(200);c.pause();c.advanceTo(10000);
-  expect(c.now).toBe(200);expect(c.getSnapshot().kills).toBe(0);c.resume();c.advanceTo(600);expect(c.getSnapshot().kills).toBe(1);expect(c.getSnapshot().score).toBe(25);c.advanceTo(600);expect(c.getSnapshot().kills).toBe(1);
+  const c=make();c.start();c.advanceTo(2000);c.toggle('one');expect(c.fire()).toBe(true);expect(c.fire()).toBe(false);c.advanceTo(2200);c.pause();c.advanceTo(10000);
+  expect(c.now).toBe(2200);expect(c.getSnapshot().kills).toBe(0);c.resume();c.advanceTo(2600);expect(c.getSnapshot().kills).toBe(1);expect(c.getSnapshot().score).toBe(25);c.advanceTo(2600);expect(c.getSnapshot().kills).toBe(1);
 });
 test('the final death effect must finish before advancing and repeated ticks advance only once',()=>{
   const c=make();c.start();play(c,()=>c.getSnapshot().kills===2);
@@ -48,12 +48,12 @@ test('the final death effect must finish before advancing and repeated ticks adv
   c.advanceTo(end);expect(c.getSnapshot().wave).toBe(2);
 });
 test('escape damages the base once and never awards a kill',()=>{
-  const c=new DefenseController({random:()=>0,problem,spawnIntervalMs:40000});c.start();c.advanceTo(29000);
-  expect(c.getSnapshot().hp).toBe(85);expect(c.getSnapshot().processed).toBe(1);expect(c.getSnapshot().kills).toBe(0);c.advanceTo(29500);expect(c.getSnapshot().hp).toBe(85);
+  const c=new DefenseController({random:()=>0,problem,spawnIntervalMs:40000});c.start();c.advanceTo(31000);
+  expect(c.getSnapshot().hp).toBe(85);expect(c.getSnapshot().processed).toBe(1);expect(c.getSnapshot().kills).toBe(0);c.advanceTo(31500);expect(c.getSnapshot().hp).toBe(85);
 });
 test('an escaping target cannot delete a different enemy or earn endless kill points',()=>{
   const c=make('hard');c.start();play(c,()=>c.getSnapshot().status==='offer');c.acceptEndless(true);
-  c.advanceTo(c.now+28300);const target=c.getSnapshot().enemies[0];c.toggle('one');c.fire();c.advanceTo(c.now+600);
+  c.advanceTo(c.now+30300);const target=c.getSnapshot().enemies[0];c.toggle('one');c.fire();c.advanceTo(c.now+600);
   expect(c.getSnapshot().enemies.some(e=>e.id===target.id)).toBe(false);expect(c.getSnapshot().endlessScore).toBe(0);expect(c.getSnapshot().endlessKills).toBe(0);expect(c.getSnapshot().hp).toBe(85);
 });
 test('declining Endless wins Challenge and does not spawn new enemies',()=>{
@@ -62,7 +62,7 @@ test('declining Endless wins Challenge and does not spawn new enemies',()=>{
   expect(c.getSnapshot().status).toBe('won');expect(c.getSnapshot().endless).toBe(false);expect(c.getSnapshot().enemies).toHaveLength(0);
 });
 test('Endless preserves HP, starts counters at zero and scores only Endless kills',()=>{
-  const c=make('hard');c.start();c.advanceTo(28500);expect(c.getSnapshot().hp).toBe(85);play(c,()=>c.getSnapshot().status==='offer');
+  const c=make('hard');c.start();c.advanceTo(30500);expect(c.getSnapshot().hp).toBe(85);play(c,()=>c.getSnapshot().status==='offer');
   expect(c.getSnapshot().score).toBe(48*25);c.acceptEndless(true);expect(c.getSnapshot()).toMatchObject({hp:85,wave:1,waveTotal:10,endlessScore:0,endlessKills:0,endlessSeconds:0});
   play(c,()=>c.getSnapshot().endlessKills===5);expect(c.getSnapshot().endlessScore).toBe(50);
   play(c,()=>c.getSnapshot().wave===4);expect(c.getSnapshot()).toMatchObject({endlessCompleted:3,waveTotal:13,endlessKills:30,endlessScore:300});
@@ -72,7 +72,7 @@ test('Endless has no inherited six-minute timeout and no finite winning wave',()
   expect(c.getSnapshot().status).toBe('running');expect(c.getSnapshot().endless).toBe(true);expect(c.getSnapshot().wave).toBeGreaterThan(7);
 });
 test('timeout is a loss and cannot award victory before all waves',()=>{
-  const c=new DefenseController({random:()=>0,problem,spawnIntervalMs:NORMAL_LIMIT_MS+1});c.start();c.toggle('one');c.fire();c.advanceTo(NORMAL_LIMIT_MS);
+  const c=new DefenseController({random:()=>0,problem,spawnIntervalMs:NORMAL_LIMIT_MS+1});c.start();c.advanceTo(2000);c.toggle('one');c.fire();c.advanceTo(NORMAL_LIMIT_MS);
   expect(c.getSnapshot().status).toBe('lost');expect(c.getSnapshot().reason).toBe('timeout');expect(c.getSnapshot().wave).toBe(1);
 });
 test('exit records only a finished Endless run once; selecting/replaying cannot retain old entities',()=>{

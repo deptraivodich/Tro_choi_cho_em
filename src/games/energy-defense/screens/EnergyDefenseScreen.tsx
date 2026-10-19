@@ -8,9 +8,10 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useSharedValue } from 'react-native-reanimated';
 import { soundManager } from '../../../shared/audio/audioController';
 import { profileManager } from '../../../shared/storage/profileManager';
+import { questionHistory } from '../../../shared/math/questionHistory';
 import { DefenseController, type EndlessRecord } from '../logic/controller';
 import { WAVE_CONFIG } from '../logic/config';
-import { pathPosition, travelled } from '../logic/path';
+import { PATH_LENGTH, pathPosition, travelled } from '../logic/path';
 import { endlessHistory } from '../logic/history';
 import { useBattleClock } from '../hooks/useBattleClock';
 import { Battlefield } from '../components/Battlefield';
@@ -18,6 +19,7 @@ import { DefenseHUD } from '../components/DefenseHUD';
 import { EnergyConsole } from '../components/EnergyConsole';
 import { DefenseOverlay } from '../components/DefenseOverlay';
 import { Preparation } from '../components/Preparation';
+import { PORTRAIT_PATH_LENGTH } from '../presentation/route';
 import { MODES } from '../theme';
 export function EnergyDefenseScreen({ onExit }: { onExit: () => void }) {
   const [controller]=useState(()=>new DefenseController());
@@ -100,16 +102,19 @@ export function EnergyDefenseScreen({ onExit }: { onExit: () => void }) {
   const target=useMemo(()=>{
     const enemy=state.enemies.find(e=>e.id===state.shot?.targetId);
     if(!enemy||!state.shot)return null;
-    return{id:enemy.id,...pathPosition(travelled(enemy,state.shot.startAt))};
+    const distance=travelled(enemy,state.shot.startAt);
+    return{id:enemy.id,...pathPosition(distance),distance};
   },[state.enemies,state.shot]);
   const toggleSound=()=>{const next=!sound;setSound(next);soundManager.setSoundEnabled(next);};
-  const start=()=>{clock.set(0);controller.start();soundManager.playTap();};
+  const start=()=>{void questionHistory.ready.then(()=>{if(!mounted.current||controller.getSnapshot().status!=='select')return;
+    controller.setPathLength(mobilePortrait?PORTRAIT_PATH_LENGTH:PATH_LENGTH);clock.set(0);controller.start();soundManager.playTap();});};
   const fire=()=>{controller.advanceTo(clock.get());if(controller.fire()){shotStart.set(controller.getSnapshot().shot!.startAt);soundManager.playCorrect();}else soundManager.playIncorrect();};
   const openHistory=()=>{setView('history');void readHistory();};
   const overlay=<DefenseOverlay state={state} view={view} records={records} error={error} sound={sound} onResume={resume} onChoose={()=>void choose()} onExit={()=>void exit()}
     onOffer={yes=>{clock.set(controller.now);controller.acceptEndless(yes);}} onClose={back} onHistory={openHistory} onRetry={()=>{void persist().then(readHistory).catch(()=>setError('Thiết bị chưa lưu được lịch sử. Em có thể thử lại.'));}} onSound={toggleSound}/>;
   if(state.status==='select')return <SafeAreaView style={s.root}><Stack.Screen options={{orientation:'portrait',statusBarHidden:false}}/><Preparation mode={state.mode} onMode={mode=>controller.selectMode(mode)} onStart={start} onHistory={openHistory} onExit={()=>void exit()}/>{overlay}</SafeAreaView>;
-  if(mobilePortrait)return <View style={{flex:1,backgroundColor:'#203E32'}} testID="energy-defense">
+  // The selected level keeps its metric/presentation together across web resizes.
+  if(controller.pathLength>PATH_LENGTH)return <View style={{flex:1,backgroundColor:'#203E32'}} testID="energy-defense">
     <Stack.Screen options={{orientation:'portrait',statusBarHidden:true}}/>
     <StatusBar hidden/>
     <View style={{flex:1,minHeight:0}}>

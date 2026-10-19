@@ -1,12 +1,12 @@
 import { useCallback, useEffect } from 'react';
 import { useFrameCallback, useSharedValue, type FrameInfo } from 'react-native-reanimated';
 
-/** One cosmetic clock for atlas poses, ambient motion and all combat layers. */
+/** One gameplay/presentation clock. Suspended frames never create catch-up spawn bursts. */
 export function useBattleClock(active: boolean) {
   const clock = useSharedValue(0);
   const advance = useCallback((info: FrameInfo) => {
     'worklet';
-    clock.set(clock.get() + (info.timeSincePreviousFrame ?? 0));
+    clock.set(clock.get() + Math.min(100, Math.max(0, info.timeSincePreviousFrame ?? 0)));
   }, [clock]);
   const frame = useFrameCallback(advance, false);
   useEffect(() => {

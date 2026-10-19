@@ -5,7 +5,6 @@ import { GameHUD, statusText } from '../components/GameHUD';
 import { GameButton, PanelDock, PausePanel, QuestionPanel, ResultPanel } from '../components/GamePanels';
 import { WorldScene } from '../components/WorldScene';
 import { useSupercar } from '../hooks/useSupercar';
-import { QUESTIONS } from '../data/questions';
 
 export const TerrainRacingScreen: React.FC<{onExit:()=>void}> = ({onExit})=>{
   const game=useSupercar(onExit);
@@ -21,10 +20,10 @@ export const TerrainRacingScreen: React.FC<{onExit:()=>void}> = ({onExit})=>{
         <Text testID="supercar-status" style={styles.statusText}>{status}</Text>
       </View>}
       {meta.phase==='question'&&<PanelDock maxHeight={layout.height*.58}>
-        <QuestionPanel question={QUESTIONS[meta.stage-1]} onChoose={game.choose} />
+        <QuestionPanel question={game.question} onChoose={game.choose} />
       </PanelDock>}
       {['result','victory'].includes(meta.phase)&&<PanelDock maxHeight={layout.height*.65}>
-        <ResultPanel meta={meta} question={QUESTIONS[meta.stage-1]} onReplay={game.replay} saveError={game.saveError} />
+        <ResultPanel meta={meta} question={game.question} onReplay={game.replay} saveError={game.saveError} />
       </PanelDock>}
       {!game.ready&&<View style={styles.loading}>
         {game.loadError?<><Text style={styles.error}>Không tải được tài nguyên Siêu Xe.</Text><GameButton label="THOÁT VỀ SẢNH" onPress={game.exit} /></>:

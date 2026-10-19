@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useDerivedValue, useReducedMotion, useSharedValue, type SharedValue } from 'react-native-reanimated';
-import { portraitCamera, scenePoint } from '../presentation/portrait';
+import { portraitCamera } from '../presentation/portrait';
+import { enemyBodyPoint, enemyGroundPoint } from '../presentation/enemy';
 import type { Enemy } from '../logic/controller';
-import { clamp01, MAP, worldToMap, type ShotTarget } from '../presentation/combat';
+import { clamp01, MAP, type ShotTarget } from '../presentation/combat';
+import { AncientPortal } from './AncientPortal';
 import { CreatureSprite } from './CreatureSprite';
 import { CombatEffects, CrystalCitadel, CrystalTurret, Firefly, PaintedGround } from './CombatStage';
 import { DefenseIcon } from './DefensePrimitives';
@@ -17,6 +19,7 @@ export function Battlefield({ creeps, hp, correct, charged, target, active, comp
   const [width, setWidth] = useState(0);
   const [height, setHeight] = useState(0);
   const scale = width / MAP.width;
+  const lastBirth = Math.max(-10000,...creeps.map(e=>e.bornAt));
   const targetPoint = useSharedValue({ x: 120, y: 100 });
   const damageStart = useSharedValue(-1000), oldHp = useSharedValue(hp);
   const previousHp = useRef(hp);
@@ -25,13 +28,13 @@ export function Battlefield({ creeps, hp, correct, charged, target, active, comp
     const ms = clock.get() - damageStart.get();
     return ms < 0 || ms >= 465 ? 0 : ms < 45 ? ms / 45 : 1 - (ms - 45) / 420;
   });
-  const targetId = target?.id, targetX = target?.x, targetY = target?.y;
+  const targetId = target?.id, targetX = target?.x, targetY = target?.y, targetDistance=target?.distance;
   useEffect(() => {
     if (targetId !== undefined && targetX !== undefined && targetY !== undefined) {
-      const p = scenePoint(worldToMap(targetX, targetY), fullscreen);
-      targetPoint.set({ x: p.x, y: p.y - 32 });
+      const distance = targetDistance ?? (targetY <= 70 ? targetX : targetX <= 170 ? 170 + targetY - 70 : 245 + targetX - 170);
+      targetPoint.set(enemyBodyPoint(enemyGroundPoint(distance, targetId, fullscreen), 72));
     }
-  }, [targetId, targetX, targetY, targetPoint, fullscreen]);
+  }, [targetId, targetX, targetY, targetDistance, targetPoint, fullscreen]);
   useEffect(() => {
     if (hp < previousHp.current) {
       oldHp.set(previousHp.current);
@@ -55,12 +58,14 @@ export function Battlefield({ creeps, hp, correct, charged, target, active, comp
         <Image source={require('../assets/round3/ground.webp')} resizeMode="cover" fadeDuration={0} style={StyleSheet.absoluteFill}/>
         {width > 0 && height > 0 && <View pointerEvents="none" testID="energy-portrait-world" style={{ position: 'absolute', width: 440, height: 700, left: camera.x, top: camera.y, transformOrigin: [0, 0, 0], transform: [{ scale: camera.scale }] }}>
           <PaintedGround portrait/>
+          <AncientPortal portrait clock={clock} lastBirth={lastBirth}/>
           <CrystalCitadel portrait hp={hp} damage={damage} clock={clock}/>
           <CrystalTurret portrait clock={clock} start={shotStart} targetPoint={targetPoint} firing={charged}/>
           {creeps.map(creep => <CreatureSprite key={creep.id} portrait creep={creep} scale={1} active={active}
             tracked={creep.id === (target?.id ?? creeps[0]?.id)} attacked={charged && creep.id === target?.id}
             clock={clock} shotStart={shotStart} targetPoint={targetPoint}/>)}
-          {charged && <CombatEffects portrait clock={clock} start={shotStart} targetPoint={targetPoint} firing={charged} hasTarget={!!target} award={award}/>}
+          <AncientPortal portrait foreground clock={clock} lastBirth={lastBirth}/>
+          {charged && <View style={[StyleSheet.absoluteFill,{zIndex:4}]}><CombatEffects portrait clock={clock} start={shotStart} targetPoint={targetPoint} firing={charged} hasTarget={!!target} award={award}/></View>}
         </View>}
         <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, s.damageOutline, outline]}/>
       </View>
@@ -76,6 +81,7 @@ export function Battlefield({ creeps, hp, correct, charged, target, active, comp
       {width > 0 && <>
         <View pointerEvents="none" style={[s.world, { transform: [{ scale }], transformOrigin: [0, 0, 0] }]}>
           <PaintedGround />
+          <AncientPortal clock={clock} lastBirth={lastBirth}/>
           <CrystalCitadel hp={hp} damage={damage} clock={clock} />
           <CrystalTurret clock={clock} start={shotStart} targetPoint={targetPoint} firing={charged} />
           {[0, 1, 2].map(index => <Firefly key={index} index={index} clock={clock} />)}
@@ -83,7 +89,10 @@ export function Battlefield({ creeps, hp, correct, charged, target, active, comp
         {creeps.map(creep => <CreatureSprite key={creep.id} creep={creep} scale={scale} active={active}
           tracked={creep.id === (target?.id ?? creeps[0]?.id)} attacked={charged && creep.id === target?.id}
           clock={clock} shotStart={shotStart} targetPoint={targetPoint} />)}
-        {charged && <View pointerEvents="none" style={[s.world, { transform: [{ scale }], transformOrigin: [0, 0, 0] }]}>
+        <View pointerEvents="none" style={[s.world,{zIndex:2,transform:[{scale}],transformOrigin:[0,0,0]}]}>
+          <AncientPortal foreground clock={clock} lastBirth={lastBirth}/>
+        </View>
+        {charged && <View pointerEvents="none" style={[s.world, { zIndex:4, transform: [{ scale }], transformOrigin: [0, 0, 0] }]}>
           <CombatEffects clock={clock} start={shotStart} targetPoint={targetPoint} firing={charged} hasTarget={!!target} award={award} />
         </View>}
         <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, s.damageOutline, outline]} />

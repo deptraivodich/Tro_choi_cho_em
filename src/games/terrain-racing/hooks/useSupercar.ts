@@ -7,6 +7,8 @@ import { runOnJS, runOnUI, useDerivedValue, useFrameCallback, useSharedValue } f
 import { ART, WAV } from '../assets';
 import { GameAudio, type SoundName, type PlayerPort } from '../audio/GameAudio';
 import { QUESTIONS } from '../data/questions';
+import { TerrainQuestions } from '../data/questionGenerator';
+import { questionHistory } from '../../../shared/math/questionHistory';
 import { advanceSimulation, chooseSpeed, initialSimulation } from '../engine/simulation';
 import { worldAt } from '../engine/world';
 import type { Simulation } from '../types';
@@ -16,6 +18,9 @@ const TARGETS=QUESTIONS.map(q=>q.correct_speed);
 export function useSupercar(onExit: () => void) {
   const focused=useIsFocused();
   const [meta,setMeta]=useState(()=>initialSimulation());
+  const [questionBank]=useState(()=>new TerrainQuestions());
+  const [question,setQuestion]=useState(QUESTIONS[0]);
+  const questionRef=useRef(question);
   const simulation=useSharedValue(meta);
   const alive=useSharedValue(true);
   const world=useDerivedValue(()=>worldAt(simulation.value));
@@ -34,8 +39,15 @@ export function useSupercar(onExit: () => void) {
     if(next.phase==='question'&&!next.paused)locked.current=false;
     audio.current?.setSuspended(next.paused);
     audio.current?.setPhase(next.phase,next.outcome!=='correct');
+    if(next.stage!==questionRef.current.stage){const q=questionBank.forStage(next.stage);questionRef.current=q;setQuestion(q);}
     setMeta(next);
-  },[]);
+  },[questionBank]);
+
+  useEffect(()=>{
+    let cancelled=false;
+    void questionHistory.ready.then(()=>{if(!cancelled){const q=questionBank.forStage(1);questionRef.current=q;setQuestion(q);}});
+    return()=>{cancelled=true;};
+  },[questionBank]);
 
   const frame=useFrameCallback(info=>{
     'worklet';
@@ -94,7 +106,7 @@ export function useSupercar(onExit: () => void) {
 
   const choose=useCallback((speed: number)=>{
     if(!active.current||locked.current||meta.paused||meta.phase!=='question'||
-      !QUESTIONS[meta.stage-1].sample_choices.includes(speed))return;
+      !question.sample_choices.includes(speed))return;
     locked.current=true;
     audio.current?.play('select');
     const expected=session.current;
@@ -105,15 +117,16 @@ export function useSupercar(onExit: () => void) {
       if(next===simulation.value)return;
       simulation.set(next);runOnJS(publish)(next);
     })(speed,expected);
-  },[alive,simulation,publish,meta]);
+  },[alive,simulation,publish,meta,question]);
 
   const replay=useCallback(()=>{
     if(!active.current)return;
     session.current++;revision.current=0;locked.current=false;started.current=new Date().toISOString();
     audio.current?.replay();setSaveError(null);
+    questionBank.reset();const q=questionBank.forStage(1);questionRef.current=q;setQuestion(q);
     const next=initialSimulation(session.current,TARGETS[0]);
     simulation.set(next);setMeta(next);
-  },[simulation]);
+  },[simulation,questionBank]);
   const toggleSound=useCallback(()=>{
     const enabled=!sound;setSound(enabled);audio.current?.setEnabled(enabled);
   },[sound]);
@@ -133,5 +146,5 @@ export function useSupercar(onExit: () => void) {
       skillsPracticed:['Vận tốc v = s / t','Toán chuyển động đều'],schemaVersion:1,
     }).catch(error=>{if(active.current&&session.current===id)setSaveError(String(error));});
   },[meta]);
-  return {meta,simulation,world,ready,loadError,saveError,sound,choose,replay,toggleSound,setPaused,exit};
+  return {meta,question,simulation,world,ready,loadError,saveError,sound,choose,replay,toggleSound,setPaused,exit};
 }

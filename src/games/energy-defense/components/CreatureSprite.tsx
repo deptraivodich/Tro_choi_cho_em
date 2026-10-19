@@ -2,10 +2,10 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedReaction, useAnimatedStyle, useDerivedValue, useReducedMotion, type SharedValue } from 'react-native-reanimated';
 import type { Enemy } from '../logic/controller';
+import { portalDepth } from '../presentation/portal';
 import { travelled } from '../logic/path';
 import { clamp01, SHOT, walkFrame, type Point } from '../presentation/combat';
-import { scenePoint } from '../presentation/portrait';
-import { enemyBodyPoint, enemyGroundPoint, ENEMY_FOOT_PIVOT } from '../presentation/enemy';
+import { enemyBodyPoint, enemyFacing, enemyGroundPoint, ENEMY_FOOT_PIVOT } from '../presentation/enemy';
 type Props = { portrait?: boolean; creep: Enemy; scale: number; active: boolean; tracked: boolean; attacked: boolean;
   clock: SharedValue<number>; shotStart: SharedValue<number>; targetPoint: SharedValue<Point> };
 const atlas = require('../assets/round3/enemies-atlas.png');
@@ -15,13 +15,14 @@ export const CreatureSprite = React.memo(function CreatureSprite({ creep, scale,
   const stride = row === 0 ? 3.2 : row === 1 ? 3.5 : 3.1;
   const size = Math.max(26, (row === 2 ? 72 : 62) * scale);
   const distance = useDerivedValue(() => travelled(creep, attacked ? Math.min(clock.get(), shotStart.get() + SHOT.impact) : clock.get()));
-  const location = useDerivedValue(() => scenePoint(enemyGroundPoint(distance.get(), creep.id), portrait));
+  const location = useDerivedValue(() => enemyGroundPoint(distance.get(), creep.id, portrait));
   useAnimatedReaction(() => ({ p: location.get(), tracked }), value => {
     if (value.tracked) {
       targetPoint.set(enemyBodyPoint(value.p, size / scale));
     }
   }, [tracked, size, scale]);
   const position = useAnimatedStyle(() => ({
+    zIndex: portalDepth(distance.get(), portrait),
     transform: [{ translateX: location.get().x * scale - size / 2 }, { translateY: location.get().y * scale - size * ENEMY_FOOT_PIVOT }],
   }));
   const pose = useAnimatedStyle(() => {
@@ -32,7 +33,8 @@ export const CreatureSprite = React.memo(function CreatureSprite({ creep, scale,
     return { opacity: 1 - defeat, transform: [
       { translateY: -(reduced ? 0 : Math.abs(Math.sin(gait)) * (row === 2 ? .5 : 1.2)) - defeat * size * .15 },
       { translateX: hit && !reduced ? Math.sin((ms - SHOT.impact) / 20) * 2 : 0 },
-      // This atlas has one view, not directional poses. Keep it upright on bends.
+      // Mirror the upright pose only; ground, shadow and target anchors stay put.
+      { scaleX: enemyFacing(distance.get(), portrait) },
       { rotate: (hit && !reduced ? -.08 : 0) + 'rad' },
       { scale: 1 - defeat * .55 },
     ] };

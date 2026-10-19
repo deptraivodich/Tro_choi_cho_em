@@ -1,0 +1,62 @@
+{
+  "file": "src\\games\\energy-defense\\assets\\round36\\source-art\\ancient-portal-front.png",
+  "sha256": "b9b5acc4a71b24c3529a05231835d5f98c14fb24b7d87e40f26fda971af0ffd3",
+  "size": [
+    1536,
+    1024
+  ],
+  "mode": "RGBA",
+  "alphaExtrema": [
+    0,
+    254
+  ],
+  "samples": {
+    "(0, 0)": [
+      9,
+      6,
+      1,
+      0
+    ],
+    "(768, 50)": [
+      41,
+      37,
+      13,
+      0
+    ],
+    "(500, 500)": [
+      148,
+      13,
+      242,
+      252
+    ],
+    "(900, 500)": [
+      209,
+      165,
+      92,
+      253
+    ],
+    "(768, 1000)": [
+      54,
+      40,
+      25,
+      0
+    ]
+  },
+  "sourceTool": "built-in imagegen edit; original alpha retained; no raster processing",
+  "alphaBoundsAbove16": [
+    21,
+    107,
+    1516,
+    930
+  ],
+  "anchors": {
+    "exit": [
+      560,
+      840
+    ],
+    "frontPlaneY": 922,
+    "widthInPortraitWorld": 220,
+    "heightInPortraitWorld": 146.66666666666666
+  },
+  "occlusionDiagnostic": "artifacts/energy-defense-round36/pixel-occlusion.json"
+}
