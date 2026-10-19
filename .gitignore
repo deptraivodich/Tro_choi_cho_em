@@ -55,3 +55,6 @@ coverage/
 
 # Local reference videos/screenshots supplied for race fixes
 /docs/references/race/
+
+# Original supercar handoff archive (runtime assets live in its game module)
+/docs/references/supercar-handoff/

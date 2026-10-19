@@ -27,7 +27,7 @@ export default function GameScreen() {
 
   // Handle hardware back press on Android
   useEffect(() => {
-    if (gameId === 'race-to-finish') return;
+    if (gameId === 'race-to-finish' || gameId === 'terrain-racing') return;
     const onHardwareBack = () => {
       handleExit();
       return true;
@@ -56,8 +56,9 @@ export default function GameScreen() {
   const GameComponent = entry.component;
 
   return <>
-    <Stack.Screen options={{ orientation: validId === 'race-to-finish' ? 'landscape' : 'default',
-      statusBarHidden: validId === 'race-to-finish', gestureEnabled: validId !== 'race-to-finish' }} />
+    <Stack.Screen options={{ orientation: validId === 'race-to-finish' ? 'landscape' : validId === 'terrain-racing' ? 'portrait' : 'default',
+      statusBarHidden: validId === 'race-to-finish' || validId === 'terrain-racing',
+      gestureEnabled: validId !== 'race-to-finish' && validId !== 'terrain-racing' }} />
     <GameComponent onExit={handleExit} />
   </>;
 }

@@ -1,0 +1,50 @@
+{
+  "generator": "built-in image_gen",
+  "source": "source-art/ancient-portal.png",
+  "sourceSize": [
+    1254,
+    1254
+  ],
+  "sha256": "4086df882fedd325eaa1ec07638f640215f35d319ba2bd1b493c70375add8e2b",
+  "visibleAlphaThreshold": 16,
+  "visibleBounds": [
+    64,
+    58,
+    1217,
+    1197
+  ],
+  "spawnFloorAnchor": [
+    500,
+    866
+  ],
+  "pillars": 3,
+  "primaryCurtainInteriorSamples": [
+    [
+      400,
+      400
+    ],
+    [
+      450,
+      500
+    ],
+    [
+      500,
+      600
+    ],
+    [
+      500,
+      700
+    ],
+    [
+      520,
+      800
+    ],
+    [
+      580,
+      850
+    ]
+  ],
+  "foreground": "middle pillar; clipped from identical PNG at render time",
+  "prompt": "PROMPT.md",
+  "curtainAlphaPolicy": "Original source preserved (interior alpha 251-253). Runtime SVG opaque plum backing fills both openings BEFORE PNG; composited alpha is 1. Animated bands never fade this backing."
+}
