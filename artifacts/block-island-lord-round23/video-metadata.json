@@ -1,0 +1,201 @@
+{
+  "source": "Actual Chrome DevTools screencast, original timestamps",
+  "speed": 1,
+  "platform": "responsive web",
+  "width": 390,
+  "height": 844,
+  "frames": 301,
+  "sourceDurationMs": 38388.359785079956,
+  "encodedDurationMs": 39108.70000000298,
+  "audio": false,
+  "actions": [
+    {
+      "name": "Start continuous-island journey",
+      "at": 1792679431866
+    },
+    {
+      "name": "Choose brick material",
+      "at": 1792679434835
+    },
+    {
+      "name": "Place brick floor: area +1",
+      "at": 1792679435706
+    },
+    {
+      "name": "Choose stone material",
+      "at": 1792679436211
+    },
+    {
+      "name": "Place stone floor: area +1",
+      "at": 1792679436806
+    },
+    {
+      "name": "Choose tree material",
+      "at": 1792679437233
+    },
+    {
+      "name": "Plant tree on existing floor: area unchanged",
+      "at": 1792679437915
+    },
+    {
+      "name": "Show real translucent blueprint",
+      "at": 1792679438666
+    },
+    {
+      "name": "Rotate island and blueprint right",
+      "at": 1792679439802
+    },
+    {
+      "name": "Rotate left to original view",
+      "at": 1792679440634
+    },
+    {
+      "name": "Hide hint; world unchanged",
+      "at": 1792679441345
+    },
+    {
+      "name": "Place garden floor 7,6",
+      "at": 1792679442202
+    },
+    {
+      "name": "Place garden floor 8,6",
+      "at": 1792679442565
+    },
+    {
+      "name": "Place garden floor 5,7",
+      "at": 1792679442967
+    },
+    {
+      "name": "Place garden floor 6,7",
+      "at": 1792679443333
+    },
+    {
+      "name": "Place garden floor 7,7",
+      "at": 1792679443947
+    },
+    {
+      "name": "Place garden floor 8,7",
+      "at": 1792679444289
+    },
+    {
+      "name": "Place garden floor 5,8",
+      "at": 1792679444729
+    },
+    {
+      "name": "Place garden floor 6,8",
+      "at": 1792679445137
+    },
+    {
+      "name": "Place garden floor 7,8",
+      "at": 1792679445564
+    },
+    {
+      "name": "Place garden floor 8,8",
+      "at": 1792679445968
+    },
+    {
+      "name": "Place garden floor 5,9",
+      "at": 1792679446350
+    },
+    {
+      "name": "Place garden floor 6,9",
+      "at": 1792679446790
+    },
+    {
+      "name": "Place garden floor 7,9",
+      "at": 1792679447168
+    },
+    {
+      "name": "Place garden floor 8,9",
+      "at": 1792679447706
+    },
+    {
+      "name": "Plant a shrub without adding area",
+      "at": 1792679448147
+    },
+    {
+      "name": "Validate area 16 and seal new blocks",
+      "at": 1792679449187
+    },
+    {
+      "name": "Continue on the same construction: mission 2",
+      "at": 1792679450221
+    },
+    {
+      "name": "Try removing sealed old block",
+      "at": 1792679451055
+    },
+    {
+      "name": "Show state-aware extension blueprint for P20",
+      "at": 1792679451898
+    },
+    {
+      "name": "Hide extension blueprint",
+      "at": 1792679452767
+    },
+    {
+      "name": "Add new paving floor next to sealed garden",
+      "at": 1792679453815
+    },
+    {
+      "name": "Add new paving floor next to sealed garden",
+      "at": 1792679454617
+    },
+    {
+      "name": "Complete perimeter 20 task",
+      "at": 1792679455709
+    },
+    {
+      "name": "Start multi-floor challenge",
+      "at": 1792679458092
+    },
+    {
+      "name": "Build brick ground slab",
+      "at": 1792679461054
+    },
+    {
+      "name": "Build brick ground slab",
+      "at": 1792679461441
+    },
+    {
+      "name": "Build brick ground slab",
+      "at": 1792679461832
+    },
+    {
+      "name": "Build brick ground slab",
+      "at": 1792679462315
+    },
+    {
+      "name": "Place a brick wall: no extra floor area",
+      "at": 1792679462750
+    },
+    {
+      "name": "Show blueprint on upper floor",
+      "at": 1792679464569
+    },
+    {
+      "name": "Build supported wooden second floor",
+      "at": 1792679466058
+    },
+    {
+      "name": "Build supported wooden second floor",
+      "at": 1792679466939
+    },
+    {
+      "name": "Build supported wooden second floor",
+      "at": 1792679467365
+    },
+    {
+      "name": "Build supported wooden second floor",
+      "at": 1792679467821
+    },
+    {
+      "name": "Observe land area 4 vs total floors 8",
+      "at": 1792679468240
+    },
+    {
+      "name": "Seal two-floor building",
+      "at": 1792679469388
+    }
+  ]
+}

@@ -1,0 +1,641 @@
+{
+  "platform": "Chrome production responsive web",
+  "campaigns": [
+    {
+      "mode": "easy",
+      "missions": 6,
+      "blocks": 30,
+      "measurements": {
+        "area": 30,
+        "groundArea": 30,
+        "perimeter": 28
+      }
+    },
+    {
+      "mode": "medium",
+      "missions": 6,
+      "blocks": 12,
+      "measurements": {
+        "area": 12,
+        "groundArea": 12,
+        "perimeter": 14
+      }
+    },
+    {
+      "mode": "hard",
+      "missions": 6,
+      "blocks": 37,
+      "measurements": {
+        "area": 37,
+        "groundArea": 16,
+        "perimeter": 16
+      }
+    }
+  ],
+  "materials": [
+    {
+      "id": "grass",
+      "placed": true,
+      "role": "floor"
+    },
+    {
+      "id": "dirt",
+      "placed": true,
+      "role": "floor"
+    },
+    {
+      "id": "stone",
+      "placed": true,
+      "role": "floor"
+    },
+    {
+      "id": "paving",
+      "placed": true,
+      "role": "floor"
+    },
+    {
+      "id": "wood",
+      "placed": true,
+      "role": "floor"
+    },
+    {
+      "id": "sand",
+      "placed": true,
+      "role": "floor"
+    },
+    {
+      "id": "brick",
+      "placed": true,
+      "role": "floor"
+    },
+    {
+      "id": "path",
+      "placed": true,
+      "role": "floor"
+    },
+    {
+      "id": "bridge",
+      "placed": true,
+      "role": "floor"
+    },
+    {
+      "id": "brick-wall",
+      "placed": true,
+      "role": "structure"
+    },
+    {
+      "id": "wood-wall",
+      "placed": true,
+      "role": "structure"
+    },
+    {
+      "id": "stone-column",
+      "placed": true,
+      "role": "structure"
+    },
+    {
+      "id": "wood-column",
+      "placed": true,
+      "role": "structure"
+    },
+    {
+      "id": "stairs",
+      "placed": true,
+      "role": "structure"
+    },
+    {
+      "id": "roof",
+      "placed": true,
+      "role": "structure"
+    },
+    {
+      "id": "oak",
+      "placed": true,
+      "role": "decoration"
+    },
+    {
+      "id": "pine",
+      "placed": true,
+      "role": "decoration"
+    },
+    {
+      "id": "cherry",
+      "placed": true,
+      "role": "decoration"
+    },
+    {
+      "id": "bush",
+      "placed": true,
+      "role": "decoration"
+    },
+    {
+      "id": "flowers",
+      "placed": true,
+      "role": "decoration"
+    },
+    {
+      "id": "moss-rock",
+      "placed": true,
+      "role": "decoration"
+    },
+    {
+      "id": "fence",
+      "placed": true,
+      "role": "fence"
+    },
+    {
+      "id": "lamp",
+      "placed": true,
+      "role": "decoration"
+    },
+    {
+      "id": "water",
+      "placed": true,
+      "role": "water"
+    }
+  ],
+  "viewports": [
+    {
+      "width": 320,
+      "height": 640,
+      "scroll": 640,
+      "rects": {
+        "island-header": {
+          "x": 6,
+          "y": 28,
+          "right": 314,
+          "bottom": 68,
+          "width": 308,
+          "height": 40
+        },
+        "island-goal": {
+          "x": 6,
+          "y": 72,
+          "right": 314,
+          "bottom": 156,
+          "width": 308,
+          "height": 84
+        },
+        "island-board": {
+          "x": 7,
+          "y": 161,
+          "right": 313,
+          "bottom": 396,
+          "width": 306,
+          "height": 235
+        },
+        "island-camera": {
+          "x": 95,
+          "y": 165,
+          "right": 309,
+          "bottom": 201,
+          "width": 214,
+          "height": 36
+        },
+        "island-floor-selector": {
+          "x": 16,
+          "y": 122,
+          "right": 304,
+          "bottom": 150,
+          "width": 288,
+          "height": 28
+        },
+        "island-inventory": {
+          "x": 6,
+          "y": 426,
+          "right": 314,
+          "bottom": 505,
+          "width": 308,
+          "height": 79
+        },
+        "island-tools": {
+          "x": 6,
+          "y": 509,
+          "right": 314,
+          "bottom": 549,
+          "width": 308,
+          "height": 40
+        },
+        "island-hint": {
+          "x": 265.5,
+          "y": 509,
+          "right": 314,
+          "bottom": 549,
+          "width": 48.5,
+          "height": 40
+        },
+        "island-actions": {
+          "x": 6,
+          "y": 553,
+          "right": 314,
+          "bottom": 592,
+          "width": 308,
+          "height": 39
+        }
+      },
+      "clipped": []
+    },
+    {
+      "width": 360,
+      "height": 640,
+      "scroll": 640,
+      "rects": {
+        "island-header": {
+          "x": 6,
+          "y": 28,
+          "right": 354,
+          "bottom": 68,
+          "width": 348,
+          "height": 40
+        },
+        "island-goal": {
+          "x": 6,
+          "y": 72,
+          "right": 354,
+          "bottom": 156,
+          "width": 348,
+          "height": 84
+        },
+        "island-board": {
+          "x": 7,
+          "y": 161,
+          "right": 353,
+          "bottom": 396,
+          "width": 346,
+          "height": 235
+        },
+        "island-camera": {
+          "x": 135,
+          "y": 165,
+          "right": 349,
+          "bottom": 201,
+          "width": 214,
+          "height": 36
+        },
+        "island-floor-selector": {
+          "x": 16,
+          "y": 122,
+          "right": 344,
+          "bottom": 150,
+          "width": 328,
+          "height": 28
+        },
+        "island-inventory": {
+          "x": 6,
+          "y": 426,
+          "right": 354,
+          "bottom": 505,
+          "width": 348,
+          "height": 79
+        },
+        "island-tools": {
+          "x": 6,
+          "y": 509,
+          "right": 354,
+          "bottom": 549,
+          "width": 348,
+          "height": 40
+        },
+        "island-hint": {
+          "x": 298.828125,
+          "y": 509,
+          "right": 354,
+          "bottom": 549,
+          "width": 55.171875,
+          "height": 40
+        },
+        "island-actions": {
+          "x": 6,
+          "y": 553,
+          "right": 354,
+          "bottom": 592,
+          "width": 348,
+          "height": 39
+        }
+      },
+      "clipped": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "scroll": 844,
+      "rects": {
+        "island-header": {
+          "x": 6,
+          "y": 28,
+          "right": 384,
+          "bottom": 68,
+          "width": 378,
+          "height": 40
+        },
+        "island-goal": {
+          "x": 6,
+          "y": 72,
+          "right": 384,
+          "bottom": 156,
+          "width": 378,
+          "height": 84
+        },
+        "island-board": {
+          "x": 7,
+          "y": 161,
+          "right": 383,
+          "bottom": 600,
+          "width": 376,
+          "height": 439
+        },
+        "island-camera": {
+          "x": 165,
+          "y": 165,
+          "right": 379,
+          "bottom": 201,
+          "width": 214,
+          "height": 36
+        },
+        "island-floor-selector": {
+          "x": 16,
+          "y": 122,
+          "right": 374,
+          "bottom": 150,
+          "width": 358,
+          "height": 28
+        },
+        "island-inventory": {
+          "x": 6,
+          "y": 630,
+          "right": 384,
+          "bottom": 709,
+          "width": 378,
+          "height": 79
+        },
+        "island-tools": {
+          "x": 6,
+          "y": 713,
+          "right": 384,
+          "bottom": 753,
+          "width": 378,
+          "height": 40
+        },
+        "island-hint": {
+          "x": 323.828125,
+          "y": 713,
+          "right": 384,
+          "bottom": 753,
+          "width": 60.171875,
+          "height": 40
+        },
+        "island-actions": {
+          "x": 6,
+          "y": 757,
+          "right": 384,
+          "bottom": 796,
+          "width": 378,
+          "height": 39
+        }
+      },
+      "clipped": []
+    },
+    {
+      "width": 412,
+      "height": 915,
+      "scroll": 915,
+      "rects": {
+        "island-header": {
+          "x": 6,
+          "y": 28,
+          "right": 406,
+          "bottom": 68,
+          "width": 400,
+          "height": 40
+        },
+        "island-goal": {
+          "x": 6,
+          "y": 72,
+          "right": 406,
+          "bottom": 156,
+          "width": 400,
+          "height": 84
+        },
+        "island-board": {
+          "x": 7,
+          "y": 161,
+          "right": 405,
+          "bottom": 671,
+          "width": 398,
+          "height": 510
+        },
+        "island-camera": {
+          "x": 187,
+          "y": 165,
+          "right": 401,
+          "bottom": 201,
+          "width": 214,
+          "height": 36
+        },
+        "island-floor-selector": {
+          "x": 16,
+          "y": 122,
+          "right": 396,
+          "bottom": 150,
+          "width": 380,
+          "height": 28
+        },
+        "island-inventory": {
+          "x": 6,
+          "y": 701,
+          "right": 406,
+          "bottom": 780,
+          "width": 400,
+          "height": 79
+        },
+        "island-tools": {
+          "x": 6,
+          "y": 784,
+          "right": 406,
+          "bottom": 824,
+          "width": 400,
+          "height": 40
+        },
+        "island-hint": {
+          "x": 342.171875,
+          "y": 784,
+          "right": 406,
+          "bottom": 824,
+          "width": 63.828125,
+          "height": 40
+        },
+        "island-actions": {
+          "x": 6,
+          "y": 828,
+          "right": 406,
+          "bottom": 867,
+          "width": 400,
+          "height": 39
+        }
+      },
+      "clipped": []
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "scroll": 1024,
+      "rects": {
+        "island-header": {
+          "x": 6,
+          "y": 28,
+          "right": 762,
+          "bottom": 68,
+          "width": 756,
+          "height": 40
+        },
+        "island-goal": {
+          "x": 6,
+          "y": 72,
+          "right": 762,
+          "bottom": 156,
+          "width": 756,
+          "height": 84
+        },
+        "island-board": {
+          "x": 7,
+          "y": 161,
+          "right": 761,
+          "bottom": 780,
+          "width": 754,
+          "height": 619
+        },
+        "island-camera": {
+          "x": 543,
+          "y": 165,
+          "right": 757,
+          "bottom": 201,
+          "width": 214,
+          "height": 36
+        },
+        "island-floor-selector": {
+          "x": 16,
+          "y": 122,
+          "right": 752,
+          "bottom": 150,
+          "width": 736,
+          "height": 28
+        },
+        "island-inventory": {
+          "x": 6,
+          "y": 810,
+          "right": 762,
+          "bottom": 889,
+          "width": 756,
+          "height": 79
+        },
+        "island-tools": {
+          "x": 6,
+          "y": 893,
+          "right": 762,
+          "bottom": 933,
+          "width": 756,
+          "height": 40
+        },
+        "island-hint": {
+          "x": 638.828125,
+          "y": 893,
+          "right": 762,
+          "bottom": 933,
+          "width": 123.171875,
+          "height": 40
+        },
+        "island-actions": {
+          "x": 6,
+          "y": 937,
+          "right": 762,
+          "bottom": 976,
+          "width": 756,
+          "height": 39
+        }
+      },
+      "clipped": []
+    },
+    {
+      "width": 1366,
+      "height": 768,
+      "scroll": 768,
+      "rects": {
+        "island-header": {
+          "x": 24,
+          "y": 28,
+          "right": 1342,
+          "bottom": 68,
+          "width": 1318,
+          "height": 40
+        },
+        "island-goal": {
+          "x": 24,
+          "y": 72,
+          "right": 1342,
+          "bottom": 156,
+          "width": 1318,
+          "height": 84
+        },
+        "island-board": {
+          "x": 25,
+          "y": 161,
+          "right": 1341,
+          "bottom": 524,
+          "width": 1316,
+          "height": 363
+        },
+        "island-camera": {
+          "x": 1123,
+          "y": 165,
+          "right": 1337,
+          "bottom": 201,
+          "width": 214,
+          "height": 36
+        },
+        "island-floor-selector": {
+          "x": 34,
+          "y": 122,
+          "right": 1332,
+          "bottom": 150,
+          "width": 1298,
+          "height": 28
+        },
+        "island-inventory": {
+          "x": 233,
+          "y": 554,
+          "right": 1133,
+          "bottom": 633,
+          "width": 900,
+          "height": 79
+        },
+        "island-tools": {
+          "x": 233,
+          "y": 637,
+          "right": 1133,
+          "bottom": 677,
+          "width": 900,
+          "height": 40
+        },
+        "island-hint": {
+          "x": 985.828125,
+          "y": 637,
+          "right": 1133,
+          "bottom": 677,
+          "width": 147.171875,
+          "height": 40
+        },
+        "island-actions": {
+          "x": 233,
+          "y": 681,
+          "right": 1133,
+          "bottom": 720,
+          "width": 900,
+          "height": 39
+        }
+      },
+      "clipped": []
+    }
+  ],
+  "exceptions": [],
+  "status": "PASS"
+}

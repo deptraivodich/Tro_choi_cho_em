@@ -1,0 +1,8 @@
+{
+  "command": "npm run start",
+  "web": "http://localhost:8090/games/block-island",
+  "manifestStatus": 200,
+  "sdk": "57.0.0",
+  "host": "192.168.2.2:8090",
+  "url": "exp://192.168.2.2:8090"
+}

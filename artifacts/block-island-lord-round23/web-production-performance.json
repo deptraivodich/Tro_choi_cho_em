@@ -1,0 +1,60 @@
+{
+  "platform": "Chrome headless production web, 320x640; not Android FPS",
+  "threshold": "Observational timings; functional assertions only",
+  "samples": [
+    {
+      "name": "Editing the cumulative three-floor mission 6",
+      "completedMissions": 5,
+      "blocks": 37,
+      "sealed": 27,
+      "rafP50Ms": 16.700000000000728,
+      "rafP95Ms": 16.899999999997817,
+      "longTasksOver50ms": 0,
+      "maxLongTaskMs": 0,
+      "aggregateScriptMs": 672.002,
+      "aggregateMainThreadTaskMs": 1592.415,
+      "heapMB": 20.427902221679688
+    },
+    {
+      "name": "All six missions sealed; overview, rotation and zoom",
+      "completedMissions": 6,
+      "blocks": 37,
+      "sealed": 37,
+      "rafP50Ms": 16.700000000004366,
+      "rafP95Ms": 50.200000000004366,
+      "longTasksOver50ms": 1,
+      "maxLongTaskMs": 51,
+      "aggregateScriptMs": 345.7009999999999,
+      "aggregateMainThreadTaskMs": 1029.5420000000001,
+      "heapMB": 25.058116912841797
+    },
+    {
+      "name": "64 placed floors; no stock cap",
+      "completedMissions": 0,
+      "blocks": 64,
+      "sealed": 0,
+      "rafP50Ms": 16.69999999999709,
+      "rafP95Ms": 16.900000000001455,
+      "longTasksOver50ms": 0,
+      "maxLongTaskMs": 0,
+      "aggregateScriptMs": 2075.394,
+      "aggregateMainThreadTaskMs": 5983.347,
+      "heapMB": 24.790782928466797
+    },
+    {
+      "name": "128 mixed-material floors on one finite island",
+      "completedMissions": 0,
+      "blocks": 128,
+      "sealed": 0,
+      "rafP50Ms": 16.69999999999709,
+      "rafP95Ms": 33.40000000000873,
+      "longTasksOver50ms": 0,
+      "maxLongTaskMs": 0,
+      "aggregateScriptMs": 2580.2849999999994,
+      "aggregateMainThreadTaskMs": 7773.802,
+      "heapMB": 38.3956298828125
+    }
+  ],
+  "exceptions": [],
+  "status": "PASS"
+}

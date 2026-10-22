@@ -1,0 +1,10 @@
+{
+  "platform": "Metro development web, real touch controls",
+  "version": 4,
+  "placedMaterial": "brick",
+  "placedFloorCount": 1,
+  "hintTarget": 16,
+  "hintDidNotBuild": true,
+  "exceptions": [],
+  "status": "PASS"
+}

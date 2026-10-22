@@ -1,0 +1,81 @@
+{
+  "project": "Lãnh Chúa Đảo Khối",
+  "round": "2.3",
+  "module": "detect from source",
+  "reference_count": 8,
+  "original_bytes_preserved": true,
+  "items": [
+    {
+      "index": 1,
+      "original_filename": "image(20261022-125053).png",
+      "archive_path": "references/image(20261022-125053).png",
+      "role": "CURRENT_MOBILE",
+      "description_vi": "Ảnh chụp hiện tại: UI mobile quá chật, có nhãn Khu 1/Khu 2, nút điều khiển dày và đảo bị chia khu. Đây là trạng thái CẦN SỬA, không phải mẫu đích.",
+      "size_bytes": 348630,
+      "sha256": "fec5c41fd67c2e7eb12839f3db4af39a8e59b5694177fb6b34dd87e8d87bbb47"
+    },
+    {
+      "index": 2,
+      "original_filename": "image(20261022-125518).png",
+      "archive_path": "references/image(20261022-125518).png",
+      "role": "CURRENT_INVENTORY",
+      "description_vi": "Ảnh cận kho hiện tại chỉ có Đất cỏ, hiển thị số lượng 3 khối, thiếu các vật liệu và nút Gợi ý xây.",
+      "size_bytes": 36982,
+      "sha256": "f2bc8e65423a6ed350adc3a3765ad1dc836dfed468fca9f5ab81b07add335e79"
+    },
+    {
+      "index": 3,
+      "original_filename": "image(20261022-125622).png",
+      "archive_path": "references/image(20261022-125622).png",
+      "role": "REFERENCE_MATERIALS_A",
+      "description_vi": "Tham khảo các kiểu vật liệu và đạo cụ isometric: đất, đá, đá rêu, bậc thang, phiến lát, cột, khúc gỗ, mảng cỏ.",
+      "size_bytes": 792638,
+      "sha256": "fda02bdb0a81f79f12037f16145b46d258b658e27e65122e7192887041955c8a"
+    },
+    {
+      "index": 4,
+      "original_filename": "image(20261022-125706).png",
+      "archive_path": "references/image(20261022-125706).png",
+      "role": "REFERENCE_MATERIALS_B",
+      "description_vi": "Tham khảo khối đá/đất cỏ có chiều sâu, chất liệu góc cạnh và cách đặt chúng lên nền isometric.",
+      "size_bytes": 359490,
+      "sha256": "61f02ccd6d8cbed3b0f9ce8243143ea807b7ecef8bc63ab110c36a741e931887"
+    },
+    {
+      "index": 5,
+      "original_filename": "image(20261022-125901).png",
+      "archive_path": "references/image(20261022-125901).png",
+      "role": "REFERENCE_MATERIALS_C",
+      "description_vi": "Tham khảo nhóm vật liệu cây xanh, bụi cây, hàng rào xanh dạng khối, thay đổi hình dáng/chi tiết.",
+      "size_bytes": 1037485,
+      "sha256": "9658582f6f9e695db7b0ed9a691c1c0c2f1b0ea22e7fbffe64b60ca5f3c65336"
+    },
+    {
+      "index": 6,
+      "original_filename": "image(20261022-130045).png",
+      "archive_path": "references/image(20261022-130045).png",
+      "role": "REFERENCE_ISLAND_A",
+      "description_vi": "Tham khảo đảo voxel nhiều tầng, núi, cây, hồ nước và bề mặt đất có chiều sâu.",
+      "size_bytes": 671529,
+      "sha256": "1e175384c75669451c2c98b07d565804f025d33b62e59956537f5be41039b828"
+    },
+    {
+      "index": 7,
+      "original_filename": "image(20261022-130120).png",
+      "archive_path": "references/image(20261022-130120).png",
+      "role": "REFERENCE_ISLAND_B",
+      "description_vi": "Tham khảo đảo nhỏ có cầu, sông, cây, ghế và đường đi trong art direction thân thiện trẻ em.",
+      "size_bytes": 835026,
+      "sha256": "676ec82c1b42877efad4a2b9f27a22ba859ec0b46e29c09bbe853dbc0d920cab"
+    },
+    {
+      "index": 8,
+      "original_filename": "image(20261022-130140).png",
+      "archive_path": "references/image(20261022-130140).png",
+      "role": "REFERENCE_ISLAND_C",
+      "description_vi": "Tham khảo đảo phong cách voxel với cây hồng, vách đá, cầu nước và cảnh quan sinh động.",
+      "size_bytes": 395196,
+      "sha256": "a4f49a0fee3c19d36e2d5e5ff265d73de726b1e32a61f6e7c76b5757514cf33d"
+    }
+  ]
+}

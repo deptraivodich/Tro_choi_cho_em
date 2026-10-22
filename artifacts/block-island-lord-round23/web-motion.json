@@ -1,0 +1,13 @@
+{
+  "platform": "Chrome responsive production web",
+  "placementDurationMs": 220,
+  "cameraPanZoomDurationMs": 220,
+  "quarterTurnRotation": true,
+  "sealEffectDurationMs": 600,
+  "intermediatePlacementFrames": 379,
+  "distinctIntermediateTransforms": 326,
+  "intermediateSealFrames": 96,
+  "sampledFrames": 1923,
+  "sourceFrames": 301,
+  "exceptions": []
+}

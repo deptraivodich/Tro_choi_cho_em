@@ -1,0 +1,24 @@
+{
+  "package": "block-island-lord-round2-voxel-building-refs",
+  "purpose": "2 visual inspiration references for block building gameplay redesign",
+  "files": [
+    {
+      "original_name": "image(20261022-033138).png",
+      "zip_path": "references/image(20261022-033138).png",
+      "description_vi": "Ảnh 1: đảo nổi nhiều tầng theo phong cách voxel/isometric, khối cỏ, đất, cây, cầu và thang; tham khảo chất lượng khối và phối cảnh, không sao chép nguyên ảnh.",
+      "bytes": 381380,
+      "sha256": "19f7e27f2285bb8a8dda6f4a178f271dc6ae18ccc26bb9f3eb897c54c91ec62b"
+    },
+    {
+      "original_name": "image(20261022-033455).png",
+      "zip_path": "references/image(20261022-033455).png",
+      "description_vi": "Ảnh 2: thế giới voxel nhiều vùng sinh thái, cây, nước, địa hình cao thấp; tham khảo mỹ thuật và chất lượng thế giới, không sao chép chữ hoặc bố cục nguyên mẫu.",
+      "bytes": 375327,
+      "sha256": "fd9c5dfa54b64fe81a4c011729bc0e6f3d7d3f76b89016adcaf581be36e107ab"
+    }
+  ],
+  "other_files": [
+    "README_VI.md",
+    "MANIFEST.json"
+  ]
+}

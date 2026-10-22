@@ -1,0 +1,136 @@
+{
+  "verifiedAt": "2026-10-22T15:00:47.852Z",
+  "branch": "fix/race-polish",
+  "module": "src/games/block-island",
+  "typecheck": "PASS",
+  "jest": {
+    "fullSuites": 41,
+    "fullTests": 483,
+    "focusedSuites": 5,
+    "focusedTests": 63,
+    "status": "PASS"
+  },
+  "eslint": {
+    "errors": 0,
+    "moduleWarnings": 0,
+    "repositoryWarnings": 31
+  },
+  "webE2E": {
+    "status": "PASS",
+    "campaigns": [
+      {
+        "mode": "easy",
+        "missions": 6,
+        "blocks": 30,
+        "measurements": {
+          "area": 30,
+          "groundArea": 30,
+          "perimeter": 28
+        }
+      },
+      {
+        "mode": "medium",
+        "missions": 6,
+        "blocks": 12,
+        "measurements": {
+          "area": 12,
+          "groundArea": 12,
+          "perimeter": 14
+        }
+      },
+      {
+        "mode": "hard",
+        "missions": 6,
+        "blocks": 37,
+        "measurements": {
+          "area": 37,
+          "groundArea": 16,
+          "perimeter": 16
+        }
+      }
+    ],
+    "materials": 24,
+    "viewports": [
+      [
+        320,
+        640
+      ],
+      [
+        360,
+        640
+      ],
+      [
+        390,
+        844
+      ],
+      [
+        412,
+        915
+      ],
+      [
+        768,
+        1024
+      ],
+      [
+        1366,
+        768
+      ]
+    ]
+  },
+  "exports": {
+    "web": "PASS",
+    "android": "PASS"
+  },
+  "physicalExpoGo": "NOT RUN",
+  "scope": {
+    "protectedFiles": 363,
+    "changed": []
+  },
+  "sourceHashes": {
+    "src/games/block-island/components/IslandArt.tsx": "aa9c6c8cd55ff46731e3909bf862463b647deddaa46b47f5b0cee8ed3e4de0dd",
+    "src/games/block-island/components/IslandButton.tsx": "e861805a84cc9ddc2f77b362463ecb482c347f70c7eba5d886f6e12fd86d1d97",
+    "src/games/block-island/components/IslandIntro.tsx": "5c14f6ebe6f47847ad527e603e845af9fa851bcb8afe6ea09e9df71d3c450f3a",
+    "src/games/block-island/components/IslandLandscape.tsx": "90ad4b8362aa945964c0ec80b653232f1f792adbaeb6f6311f2ba62b3d30cb1f",
+    "src/games/block-island/components/IslandWorld.tsx": "51d3b913a1b3948fcfb3f4363f259854e7267f468f4e5dd57870af4fbdeb85a0",
+    "src/games/block-island/components/MaterialArt.tsx": "2a40e1b0ef45342db4667b6c216bb38d578fcfa2f43f45adacbc223300febfdc",
+    "src/games/block-island/components/MaterialPalette.tsx": "a8ad013e76cf29fe2ceb0934afa406719f61768169e07d433c0ab3a3b874c4e4",
+    "src/games/block-island/components/VoxelArt.tsx": "db4e40d90a38b39b8b26f6e7a0017db301c0d9a93785844265cc4b3c49dcf173",
+    "src/games/block-island/components/VoxelWorld.tsx": "185444e7b29be2fadd8a69a4680ac202d7e0dc105fb5f598b58ad866bb76292a",
+    "src/games/block-island/hooks/useIsland.ts": "f8a41d6355db6fc34d85b0d6f726d9531f31baf50cb39bb904ea1b0313f6b9ff",
+    "src/games/block-island/hooks/useIslandCamera.ts": "d8a140b28bdd8f2add9f5b46cd1621334d25dafe84b0cd51782480c8e8df6a39",
+    "src/games/block-island/index.ts": "2717f3bcfb1147269bbd9972c19a255260773c5d0680f9d37dcebc0bada4d943",
+    "src/games/block-island/logic/construction.ts": "19d975b1bba668e645a4e2b219dae7d1330b199a3863cd5bc4bf6d1fa337f081",
+    "src/games/block-island/logic/island.ts": "5a429351d1a3479a397d0ab831d627bf9c4e02ce67a215a598b7cd07f951b084",
+    "src/games/block-island/logic/materials.ts": "b81dacc2195bd910e278015aaae4636607aac3d4002d87b7a83321720e5b5348",
+    "src/games/block-island/logic/missions.ts": "597cac320ec3a35b2f0d22c3ff62dad226c97dfa6650a9d8967d4e9b6529f183",
+    "src/games/block-island/logic/model.ts": "bc84899447c0652c06661a8720f0189ec92bc9de3335ceae24b06a61d9c438f6",
+    "src/games/block-island/logic/planner.ts": "418be941a167ae395e63e897b8bd1bb3263d2d987d53e1b460943b4cf9871176",
+    "src/games/block-island/logic/projection.ts": "1b1c5f22d7d238bda87b6898f1d4c65d312801385d6aae9bf9ab7bc63db8f647",
+    "src/games/block-island/logic/state.ts": "911c919da599bf7dba42fd09eed3975eeda03b74446c8e25660803468a9b4fe7",
+    "src/games/block-island/screens/BlockIslandScreen.tsx": "0f61b3c5cc1c2cdcc29bce4fb3869a743dcd2ba0325599308711d068083ccbb7",
+    "src/games/block-island/screens/ConstructionScreen.tsx": "f23aac8fba978bcfb5e6eef49ab31ef13571c34bf5e705ea14ab8a38442431c4",
+    "src/games/block-island/tests/accessibility.mjs": "50c9e533cd36e45f83806980d5b0560a2b3c0cfce7707fd30d84bbc1df0195a4",
+    "src/games/block-island/tests/browser.mjs": "0d04ddaeadd06ba2f9074b0726b8975d98363278d1ae33855030fb1bfafab353",
+    "src/games/block-island/tests/e2e.mjs": "be15712057f11038fffdff926f76087da07070f0169ae1c218a4b333a7784f4c",
+    "src/games/block-island/tests/flow.mjs": "8815f769bf77a0e317dc49e829c39e5fea0f2d89d026529291c0bab70486c3c7",
+    "src/games/block-island/tests/island.test.ts": "2e3cce60c33e02f91002b3d29dcbe0e6932560e66ad68d00f81c966204f0f188",
+    "src/games/block-island/tests/lifecycle.test.tsx": "3abcd4090038780f73efcb715e96e71f7f2df0bd25171ee9a5313d145b56e3bf",
+    "src/games/block-island/tests/performance.mjs": "4db0b1e7edd38a61b0dd83de4bebe459916124f54930d7c346c568391d76001f",
+    "src/games/block-island/tests/planner.test.ts": "ef1d403ff8cb6435ff4b85b7a5994731c49ee363a3983044dba1cca64e68a394",
+    "src/games/block-island/tests/rendering.test.tsx": "5982eb4923227ab729a0cbf03d0bfddce1154b962bd21888d938e51ec8bba547",
+    "src/games/block-island/tests/static.mjs": "98c1e228ee624d8a382827c9074cfaad2fd8b191389954d2f9c0cb068377b0a4",
+    "src/games/block-island/tests/video.mjs": "2710ffac9a7f866848f7fa017419e588f0566277a24508b8bb1f0f97196fbcb3"
+  },
+  "liveSmoke": {
+    "platform": "Metro development web, real touch controls",
+    "version": 4,
+    "placedMaterial": "brick",
+    "placedFloorCount": 1,
+    "hintTarget": 16,
+    "hintDidNotBuild": true,
+    "exceptions": [],
+    "status": "PASS"
+  },
+  "metroRestarted": true,
+  "sourceDrift": []
+}

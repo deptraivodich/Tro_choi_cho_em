@@ -1,0 +1,52 @@
+{
+  "platform": "Chrome responsive production web; native not tested",
+  "desktopMouse": "PASS",
+  "keyboardFloorSelector": "PASS",
+  "text120Percent": {
+    "scroll": 640,
+    "board": {
+      "x": 7,
+      "y": 167.203125,
+      "right": 313,
+      "bottom": 390.40625,
+      "width": 306,
+      "height": 223.203125
+    },
+    "floors": {
+      "x": 16,
+      "y": 128.203125,
+      "right": 304,
+      "bottom": 156.203125,
+      "width": 288,
+      "height": 28
+    },
+    "details": {
+      "x": 272,
+      "y": 128.203125,
+      "right": 304,
+      "bottom": 156.203125,
+      "width": 32,
+      "height": 28
+    },
+    "hint": {
+      "x": 265.5,
+      "y": 505.203125,
+      "right": 314,
+      "bottom": 545.203125,
+      "width": 48.5,
+      "height": 40
+    },
+    "actions": {
+      "x": 6,
+      "y": 549.203125,
+      "right": 314,
+      "bottom": 592,
+      "width": 308,
+      "height": 42.796875
+    },
+    "clipped": []
+  },
+  "reducedMotion": "Chrome emulated prefers-reduced-motion",
+  "exceptions": [],
+  "status": "PASS"
+}
