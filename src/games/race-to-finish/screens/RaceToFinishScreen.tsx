@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, Image, AppState, BackHandler, Keyboard } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useIsFocused, useFocusEffect } from 'expo-router';
-import { usePreventRemove } from 'expo-router/react-navigation';
+import { useIsFocused, useFocusEffect, usePreventRemove } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRaceGame } from '../hooks/useRaceGame';

@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
 import { areFractionsEqual, type Fraction } from '../../../shared/math/fraction';
 import type { BattleState } from '../logic/controller';
 import { CrystalArt } from './GameArt';
@@ -10,7 +10,7 @@ export function MathActionDock({ state, sum, bottom, left, right, onToggle, onFi
   state: BattleState; sum: Fraction; bottom: number; left: number; right: number;
   onToggle: (id: string) => void; onFire: () => void;
 }) {
-  const expression = useRef<ScrollView>(null);
+  const expression = useRef<ScrollViewInstance>(null);
   const selected = state.problem.availablePieces.filter(p => state.selected.includes(p.id));
   const exact = selected.length > 0 && areFractionsEqual(sum, state.problem.targetFraction);
   const over = sum.num * state.problem.targetFraction.den > state.problem.targetFraction.num * sum.den;

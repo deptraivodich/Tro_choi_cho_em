@@ -69,7 +69,7 @@ export const TrainingGamesHome: React.FC<TrainingGamesHomeProps> = ({ onSelectGa
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.white} />
+      <StatusBar barStyle="dark-content" />
 
       {/* Top App Header */}
       <View style={styles.header}>

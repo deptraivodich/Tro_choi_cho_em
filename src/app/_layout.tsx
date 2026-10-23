@@ -1,10 +1,11 @@
+import { RootSafeArea } from '../shared/components/RootSafeArea';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 
 export default function RootLayout() {
   return (
-    <>
+    <RootSafeArea>
       <StatusBar style="dark" />
       <Stack
         screenOptions={{
@@ -16,6 +17,6 @@ export default function RootLayout() {
         <Stack.Screen name="index" options={{ title: 'Trò chơi rèn luyện cho em' }} />
         <Stack.Screen name="games/[gameId]" options={{ title: 'Chi tiết trò chơi' }} />
       </Stack>
-    </>
+    </RootSafeArea>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native';
 import { colors, shadows } from '../theme/colors';
 import { soundManager } from '../audio/audioController';
 
@@ -20,6 +20,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
   onExit,
   extraStats,
 }) => {
+  const compact = useWindowDimensions().width < 600;
   const [soundOn, setSoundOn] = useState(soundManager.isSoundEnabled());
 
   const toggleSound = () => {
@@ -30,7 +31,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
   };
 
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, compact && styles.compactHeader]}>
       <View style={styles.leftRow}>
         <TouchableOpacity
           style={styles.circleBtn}
@@ -56,9 +57,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
         </View>
       </View>
 
-      <View style={styles.middleRow}>
-        {extraStats}
-      </View>
+      {!compact && <View style={styles.middleRow}>{extraStats}</View>}
 
       <View style={styles.rightRow}>
         <TouchableOpacity
@@ -94,6 +93,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
           <Text style={styles.btnIcon}>⏸️</Text>
         </TouchableOpacity>
       </View>
+      {compact && extraStats && <View style={[styles.middleRow, styles.compactStats]}>{extraStats}</View>}
     </View>
   );
 };
@@ -112,6 +112,8 @@ const styles = StyleSheet.create({
     zIndex: 100,
     elevation: 4,
   },
+  compactHeader: { flexWrap: 'wrap', rowGap: 8 },
+  compactStats: { width: '100%', justifyContent: 'center' },
   leftRow: {
     flexDirection: 'row',
     alignItems: 'center',
